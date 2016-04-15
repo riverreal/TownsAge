@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<map version="1.0" orientation="orthogonal" renderorder="right-up" width="50" height="30" tilewidth="32" tileheight="32" nextobjectid="10">
+ <tileset firstgid="1" name="generic-platformer-tiles-smpl" tilewidth="32" tileheight="32" tilecount="96" columns="12">
+  <image source="generic-platformer-tiles-smpl.png" width="384" height="256"/>
+ </tileset>
+ <tileset firstgid="97" name="b-button" tilewidth="32" tileheight="32" tilecount="81" columns="9">
+  <image source="b-button.png" width="300" height="300"/>
+ </tileset>
+ <layer name="base" width="50" height="30">
+  <data encoding="base64" compression="zlib">
+   eJzt0jsSgCAMRVEUtRRdkh9Kf/vfjK91xkIyyAR9xWkzNxBvjPH0CwOMMMGsoEfat8AKG+xwJNg5ZE5I31OxZr7RRuE3orkxhxtJ3Sj5W433IHm3HO6BrgoowUIFNTQKuiRacNBBr6CHe8Tbw36EIyIiIiK6cQIVpPuC
+  </data>
+ </layer>
+ <layer name="platform" width="50" height="30">
+  <data encoding="base64" compression="zlib">
+   eJztz8EKgkAYReEx19a6B/AB0rZlW61t7/8qXWECGWaaQehH4XxwcFAXc50DAAB7Ukfam/nOp0iWmsz3Tl2Cd1fV+3Nqg9WO7/3PBf/e1N2fB/VQlTq49IZ/7wjvX7JjVJN6q6d6Lb4dne2O1P1LdvxivaPNPNey3gEAAABsxQe3UgcA
+  </data>
+ </layer>
+ <layer name="grass" width="50" height="30">
+  <data encoding="base64" compression="zlib">
+   eJzt0rENACAIBECndP9RXAAqCkTvEmoe8msBwB92MNPckLmaofuGaH/UjSxnd3e6/1c1PX+nrKfTBgAAXnYA2xsXLw==
+  </data>
+ </layer>
+ <layer name="deco" width="50" height="30">
+  <data encoding="base64" compression="zlib">
+   eJzt1N0KgCAMBWCfp+6Lfq6r6wq03v9BWqAwRFBQGcj54JCBjA1kSgEAQE0zZaGs0o1k2ig75ZBuJNNJuSi3dCON6Ci9dBMFDJTRnh/JRgp5pRtgcnZgbI6a+9V/26EdmPr+/TlSaqeYvH/Dztp++dv+hXYgv+Nqulqa3fPniNU2gR4BAAAAAFr3AbEnDqg=
+  </data>
+ </layer>
+ <objectgroup name="player">
+  <object id="1" name="playerPoint" x="512" y="382" width="32" height="32"/>
+  <object id="5" name="playerPoint1" x="1025" y="350" width="29" height="31"/>
+ </objectgroup>
+ <layer name="col" width="50" height="30" opacity="0.51">
+  <properties>
+   <property name="collision" type="bool" value="true"/>
+  </properties>
+  <data encoding="base64" compression="zlib">
+   eJzt0zkKACAMRFEPnPvXNpZxx5iB/yCly8hoRZ+1UUeOXMiRCzlyIcdf1hkl3n2jc9ye1VsflWP0hrN+rPTmdY7TvXc7/ypH9J9T/OeeUUfVBgAAAPBUOtMsTQ==
+  </data>
+ </layer>
+</map>
