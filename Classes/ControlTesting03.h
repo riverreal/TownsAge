@@ -2,6 +2,8 @@
 #define __Control3_H__
 
 #include "cocos2d.h"
+#include <vector>
+#include "GameData.h"
 
 class Control3 : public cocos2d::Layer
 {
@@ -11,10 +13,14 @@ public:
     virtual bool init();
 	virtual void update(float dt);
 
-	void walk(bool directionRight);
+	void walk(bool directionRight, cocos2d::Sprite* subject);
+	void npcWalk(bool directionRight, cocos2d::Sprite* subject);
 	void setViewpoint(cocos2d::Vec2 position);
 	cocos2d::Vec2 convertToTilePosition(cocos2d::Vec2 position);
 	void simplePhysics(); //will go inside update
+
+	void npcAI();
+	void spawnNPC(int npcNumber);
 
     // a selector callback
     void menuCloseCallback(cocos2d::Ref* pSender);
@@ -28,15 +34,46 @@ public:
     CREATE_FUNC(Control3);
 
 private:
-	enum TOUCH_INDEX
+	
+
+	struct NPCStates
 	{
-		FIRST_TOUCH,
-		SECOND_TOUCH,
-		THRID_TOUCH,
-		FORTH_TOUCH
+	public:
+		//Default state contructor
+		NPCStates() 
+			:stateID(NPC_STATE_IDLE),
+			isBuilding(false),
+			stateDuration(1.0f),
+			npcType(NPC_TYPE_BEARD),
+			directionRight(false),
+			timeCounter(0),
+			firstTimeState(true)
+		{};
+
+		//Parameter asignment contructor
+		NPCStates(int stateID, bool isBuilding, float stateDuration, int npcType, bool directionRight)
+			:stateID(stateID),
+			isBuilding(isBuilding),
+			stateDuration(stateDuration),
+			npcType(npcType),
+			directionRight(directionRight),
+			timeCounter(0),
+			firstTimeState(true)
+		{};
+
+		int stateID;
+		bool isBuilding;
+		//duration of the state in seconds
+		float stateDuration;
+		int npcType;
+		bool directionRight;
+		int timeCounter;
+		bool firstTimeState;
 	};
 
 	cocos2d::Sprite* m_character;
+	std::vector<cocos2d::Sprite*> m_npcVector;
+	std::vector<NPCStates> m_npcStateVector;
 	cocos2d::TMXTiledMap* m_tilemap;
 	cocos2d::TMXLayer* m_collisionLayer;
 	bool m_directionRight;

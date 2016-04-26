@@ -1,6 +1,7 @@
 #include "ControlTesting03.h"
 #include "TitleScene.h"
 
+
 USING_NS_CC;
 
 Scene* Control3::createScene()
@@ -21,15 +22,15 @@ Scene* Control3::createScene()
 // on "init" you need to initialize your instance
 bool Control3::init()
 {
-    //////////////////////////////
-    // 1. super init first
-    if ( !Layer::init() )
-    {
-        return false;
-    }
-    
-    Size visibleSize = Director::getInstance()->getVisibleSize();
-    Vec2 origin = Director::getInstance()->getVisibleOrigin();
+	//////////////////////////////
+	// 1. super init first
+	if (!Layer::init())
+	{
+		return false;
+	}
+
+	Size visibleSize = Director::getInstance()->getVisibleSize();
+	Vec2 origin = Director::getInstance()->getVisibleOrigin();
 
 	//physics variable initialization
 	m_standing = true;
@@ -44,7 +45,7 @@ bool Control3::init()
 	//control init
 	m_aButtonPressed = false;
 
-    //node initialization
+	//node initialization
 	m_gameNode = Node::create();
 	m_uiNode = Node::create();
 
@@ -65,8 +66,9 @@ bool Control3::init()
 
 	m_character = Sprite::create("img/sprites/caveman01.png");
 	m_character->setScale(0.106);
+	m_character->setZOrder(20);
 	m_character->setPosition(x + m_tilemap->getTileSize().width / 2, y + m_tilemap->getTileSize().height / 2);
-	m_gameNode->addChild(m_character);
+	m_gameNode->addChild(m_character);	
 
 	auto leftButton = Sprite::create("img/dpad.png");
 	leftButton->setPosition(visibleSize.width / 10 * 1, visibleSize.height / 6);
@@ -97,7 +99,6 @@ bool Control3::init()
 	closeItem->setPosition(Vec2(origin.x + visibleSize.width - closeItem->getBoundingBox().getMaxX(),
 		origin.y + closeItem->getBoundingBox().getMaxY()));
 
-
 	// create menu, it's an autorelease object
 	auto menu = Menu::create(closeItem, NULL);
 	menu->setPosition(Vec2::ZERO);
@@ -114,8 +115,11 @@ bool Control3::init()
 
 	Director::getInstance()->getEventDispatcher()->addEventListenerWithSceneGraphPriority(listener, this);
 
+	//spawn 2 npcs first
+	spawnNPC(10);
+
 	m_gameNode->setScale(3);
-	
+
 	//setViewpoint(m_character->getPosition());
 	m_gameNode->setPosition(Vec2::ZERO);
 	m_uiNode->setPosition(Vec2::ZERO);
@@ -124,33 +128,50 @@ bool Control3::init()
 
 	this->scheduleUpdate();
 
-	CCLOG("Test-Start");
-
     return true;
 }
 
-void Control3::walk(bool directionRight)
+void Control3::walk(bool directionRight, Sprite* subject)
 {
-	auto moveRight = MoveBy::create(0.5, Vec2(90, 0));
-	auto moveLeft = MoveBy::create(0.5, Vec2(-90, 0));
-
-	m_character->stopAllActions();
+	subject->stopAllActions();
 	
 	if (directionRight) //right
 	{
-		m_character->setFlipX(true);
-		//m_character->runAction(RepeatForever::create(moveRight));
+		subject->setFlipX(true);
 	}
 	else //left
 	{
-		m_character->setFlipX(false);
-		//m_character->runAction(RepeatForever::create(moveLeft));
+		subject->setFlipX(false);
 	}
 	
 	auto frame1 = RotateTo::create(0.1, -20);
 	auto frame2 = RotateTo::create(0.1, 20);
 	auto sequence = Sequence::create(frame1, frame2, NULL);
-	m_character->runAction(RepeatForever::create(sequence));
+	subject->runAction(RepeatForever::create(sequence));
+}
+
+void Control3::npcWalk(bool directionRight, cocos2d::Sprite * subject)
+{
+	auto moveRight = MoveBy::create(0.5, Vec2(20, 0));
+	auto moveLeft = MoveBy::create(0.5, Vec2(-20, 0));
+
+	subject->stopAllActions();
+
+	if (directionRight) //right
+	{
+		subject->setFlipX(true);
+		subject->runAction(RepeatForever::create(moveRight));
+	}
+	else //left
+	{
+		subject->setFlipX(false);
+		subject->runAction(RepeatForever::create(moveLeft));
+	}
+
+	auto frame1 = RotateTo::create(0.1, -20);
+	auto frame2 = RotateTo::create(0.1, 20);
+	auto sequence = Sequence::create(frame1, frame2, NULL);
+	subject->runAction(RepeatForever::create(sequence));
 }
 
 void Control3::setViewpoint(cocos2d::Vec2 position)
@@ -158,7 +179,7 @@ void Control3::setViewpoint(cocos2d::Vec2 position)
 	auto visibleSize = Director::getInstance()->getWinSize();
 
 	int x = (visibleSize.width / 2) - position.x;
-	int y = (visibleSize.height / 2) - position.y;
+	int y = (visibleSize.height / 2.3) - position.y;
 
 	//player-centered position non-scaled
 	auto defPosition = Vec2(x, y);
@@ -169,7 +190,7 @@ void Control3::setViewpoint(cocos2d::Vec2 position)
 	//scaled position
 	defPosition += viewPointDelta;
 	defPosition -= (visibleSize / 2) * (m_gameNode->getScale() - 1);
-
+	
 	m_gameNode->setPosition(defPosition);
 }
 
@@ -334,11 +355,21 @@ void Control3::simplePhysics()
 		}*/
 
 	auto nextTileTop = convertToTilePosition(Vec2(m_character->getBoundingBox().getMidX(), m_character->getBoundingBox().getMaxY()));
+	auto upperTile = m_collisionLayer->getTileAt(nextTileTop);
 	if (m_collisionLayer->getTileAt(nextTileTop) != NULL)
 	{
 		if (m_speedY > 0)
 		{
 			m_speedY = 0;
+			m_jumpInstanced = false;
+
+			//position correction
+
+			auto correctionDelta = upperTile->getBoundingBox().getMinY() - m_character->getBoundingBox().getMaxY();
+			if (correctionDelta < -6)
+			{
+				m_speedY += correctionDelta / 5;
+			}
 		}
 	}
 
@@ -368,10 +399,79 @@ void Control3::simplePhysics()
 	m_character->setPositionX(m_character->getPositionX() + m_speedX);
 }
 
+void Control3::npcAI()
+{
+	
+	for (int i = 0; i < m_npcStateVector.size(); ++i)
+	{
+		if (m_npcStateVector[i].stateID == NPC_STATE_WALKING)
+		{
+			if (m_npcStateVector[i].firstTimeState)
+			{
+				m_npcVector[i]->stopAllActions();
+				m_npcVector[i]->setRotation(0);
+				m_npcStateVector[i].stateDuration = cocos2d::RandomHelper::random_int(0, 2);
+				m_npcStateVector[i].directionRight = cocos2d::RandomHelper::random_int(0, 1);
+				m_npcStateVector[i].firstTimeState = false;
+				npcWalk(m_npcStateVector[i].directionRight, m_npcVector[i]);
+			}
+			
+			m_npcStateVector[i].timeCounter++;
+
+			if ((m_npcStateVector[i].timeCounter / 60) >= m_npcStateVector[i].stateDuration)
+			{
+				m_npcStateVector[i].firstTimeState = true;
+				m_npcStateVector[i].timeCounter = 0;
+				m_npcStateVector[i].stateDuration = 0;
+				m_npcStateVector[i].stateID = NPC_STATE_IDLE;
+			}
+		}
+		else if (m_npcStateVector[i].stateID == NPC_STATE_IDLE)
+		{
+			if (m_npcStateVector[i].firstTimeState)
+			{
+				m_npcVector[i]->setRotation(0);
+				m_npcVector[i]->stopAllActions();
+				m_npcStateVector[i].stateDuration = cocos2d::RandomHelper::random_int(0, 5) + 1;
+				m_npcStateVector[i].firstTimeState = false;
+			}
+			m_npcStateVector[i].timeCounter++;
+
+			if ((m_npcStateVector[i].timeCounter / 60) >= m_npcStateVector[i].stateDuration)
+			{
+				m_npcStateVector[i].firstTimeState = true;
+				m_npcStateVector[i].timeCounter = 0;
+				m_npcStateVector[i].stateDuration = 0;
+				m_npcStateVector[i].stateID = NPC_STATE_WALKING;
+			}
+		}
+	}
+}
+
+void Control3::spawnNPC(int npcNumber)
+{
+	for (int i = 0; i < npcNumber; ++i)
+	{
+		//Create a default state first
+		NPCStates randomState;
+		int maxType = NPC_TYPE_PREHISTORIC_MAX-1;
+		randomState.npcType = cocos2d::RandomHelper::random_int(0, maxType);
+		//WARNING: npcStateVector and npcVector has to share the same index!
+		m_npcStateVector.push_back(randomState);
+		m_npcVector.push_back(Sprite::create(npcTypePath[m_npcStateVector[i].npcType]));
+		m_npcVector[i]->setPositionY(m_character->getPositionY());
+		m_npcVector[i]->setPositionX(cocos2d::RandomHelper::random_int(0, 1200) + 200);
+		m_npcVector[i]->setScale(m_character->getScale());
+		m_gameNode->addChild(m_npcVector[i]);
+
+	}
+}
+
 void Control3::update(float dt)
 {
 	setViewpoint(m_character->getPosition());
 	simplePhysics();
+	npcAI();
 }
 
 void Control3::onTouchesBegan(const std::vector<cocos2d::Touch*>& touch, cocos2d::Event* eventt)
@@ -383,14 +483,14 @@ void Control3::onTouchesBegan(const std::vector<cocos2d::Touch*>& touch, cocos2d
 		Rect touchPoint = Rect(t->getLocation().x, t->getLocation().y, 2, 2);
 		if (touchPoint.intersectsRect(m_rightRect))
 		{
-			walk(true);
+			walk(true, m_character);
 			m_directionRight = true;
 			m_standing = false;
 			m_moveTouchID = t->getID();
 		}
 		else if (touchPoint.intersectsRect(m_leftRect))
 		{
-			walk(false);
+			walk(false, m_character);
 			m_directionRight = false;
 			m_standing = false;
 			m_moveTouchID = t->getID();
@@ -415,7 +515,7 @@ void Control3::onTouchesMoved(const std::vector<cocos2d::Touch*>& touch, cocos2d
 		{
 			if(!m_directionRight)
 			{
-				walk(true);
+				walk(true, m_character);
 				m_directionRight = true;
 				m_standing = false;
 				m_moveTouchID = t->getID();
@@ -425,7 +525,7 @@ void Control3::onTouchesMoved(const std::vector<cocos2d::Touch*>& touch, cocos2d
 		{
 			if (m_directionRight)
 			{
-				walk(false);
+				walk(false, m_character);
 				m_directionRight = false;
 				m_standing = false;
 				m_moveTouchID = t->getID();
@@ -448,6 +548,7 @@ void Control3::onTouchesEnded(const std::vector<cocos2d::Touch*>& touch, cocos2d
 		else if (t->getID() == m_actionTouchID)
 		{
 			m_aButtonPressed = false;
+			m_jumpInstanced = false;
 			m_actionTouchID = -1;
 		}
 	}
@@ -458,3 +559,4 @@ void Control3::menuCloseCallback(Ref* pSender)
 	auto scene = TitlleScene::createScene();
 	Director::getInstance()->replaceScene(scene);
 }
+

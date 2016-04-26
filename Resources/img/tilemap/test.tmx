@@ -27,7 +27,7 @@
   </data>
  </layer>
  <objectgroup name="player">
-  <object id="1" name="playerPoint" x="512" y="382" width="32" height="32"/>
+  <object id="1" name="playerPoint" x="512.091" y="480.273" width="32" height="32"/>
   <object id="5" name="playerPoint1" x="1025" y="350" width="29" height="31"/>
  </objectgroup>
  <layer name="col" width="50" height="30" opacity="0.51">
