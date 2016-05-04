@@ -2,6 +2,7 @@
 #include "ControlTesting01.h"
 #include "ControlTesting02.h"
 #include "ControlTesting03.h"
+#include "GameData.h"
 
 USING_NS_CC;
 
@@ -66,6 +67,18 @@ bool TitlleScene::init()
 
     // add the label as a child to this layer
     this->addChild(label, 1);
+
+	UserDefault* def = UserDefault::getInstance();
+	//def->setIntegerForKey("AreaATM", 0);
+	def->setIntegerForKey("MapArea", mapData::HOME_MAP);
+	def->setBoolForKey("FromRight", true);
+	for (int i = 0; i < 14; ++i)
+	{
+		def->setIntegerForKey(mapData::leftMap[i].c_str(), 1);
+		def->setIntegerForKey(mapData::rightMap[i].c_str(), 1);
+	}
+
+	def->flush();
 
 	auto control1 = MenuItemFont::create("Half Screen", CC_CALLBACK_1(TitlleScene::menuTransitionCallback, this, 0)); //index 0
 	control1->setPosition(origin.x + visibleSize.width/2, origin.y + visibleSize.height*4/6);

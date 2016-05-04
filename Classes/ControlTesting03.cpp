@@ -1,6 +1,6 @@
 #include "ControlTesting03.h"
 #include "TitleScene.h"
-
+#include <sstream>
 
 USING_NS_CC;
 
@@ -51,24 +51,105 @@ bool Control3::init()
 
 	//facing right by default
 	m_directionRight = true;
+	m_isTalking = false;
+	m_isCreatedPopUp = false;
+	m_onNext = false;
 
-	m_tilemap = TMXTiledMap::create("img/tilemap/test.tmx");
+	auto def = UserDefault::getInstance();
+	//Area system
+	// <--- Left Map      HOME     Right Map --->
+	// -5, -4, -3, -2, -1,  0,  1,  2,  3,  4,  5
+	int area = def->getIntegerForKey("MapArea");
+	bool fromRight = def->getBoolForKey("FromRight");
+	int playerX;
+	int playerY;
+	CCLOG("AREA: %d", area);
+	//right map
+	if (area > 0)
+	{
+		if (def->getIntegerForKey(mapData::rightMap[area].c_str()) == mapData::FOREST01)
+		{
+			m_tilemap = TMXTiledMap::create("img/tilemap/forest01.tmx");
+		}
+	}
+	//left map
+	else if (area < 0)
+	{
+		if (def->getIntegerForKey(mapData::leftMap[abs(area)].c_str()) == mapData::FOREST01)
+		{
+			m_tilemap = TMXTiledMap::create("img/tilemap/forest01.tmx");
+		}
+	}
+	//home map
+	else
+	{
+		m_tilemap = TMXTiledMap::create("img/tilemap/test.tmx");
+	}
+
 	m_gameNode->addChild(m_tilemap, -1);
-
 	auto objectGroup = m_tilemap->getObjectGroup("player");
-	CCASSERT(NULL != objectGroup, "'player' object group not found.");
-	auto playerSpawnPoint = objectGroup->getObject("playerPoint");
+	ValueMap comeFrom;
+	comeFrom = objectGroup->getObject("NextLeft");
+	float leftArrowX = comeFrom["x"].asInt();
+	float leftArrowY = comeFrom["y"].asInt();
+	comeFrom = objectGroup->getObject("NextRight");
+	float rightArrowX = comeFrom["x"].asInt();
+	float rightArrowY = comeFrom["y"].asInt();
+
+	/*
+	if (area == mapData::HOME_MAP)
+	{
+		auto playerSpawnPoint = objectGroup->getObject("playerPoint");
+		playerX = playerSpawnPoint["x"].asInt();
+		playerY = playerSpawnPoint["y"].asInt();
+	}
+	*/
+	//else
+	//{
+		if (fromRight)
+		{
+			playerX = leftArrowX + 42;
+			playerY = leftArrowY;
+		}
+		else
+		{
+			playerX = rightArrowX - 42;
+			playerY = rightArrowY;
+		}
+	//}
+
+	auto leftArrow = Sprite::create("img/ui/red-arrow.png");
+	leftArrow->setRotation(-90);
+	leftArrow->setScale(0.1);
+	leftArrow->setPosition(leftArrowX + m_tilemap->getTileSize().width / 2, leftArrowY + m_tilemap->getTileSize().height / 2);
+	leftArrow->setName("LeftArrow");
+	m_gameNode->addChild(leftArrow);
+
+	auto rightArrow = Sprite::create("img/ui/red-arrow.png");
+	rightArrow->setRotation(90);
+	rightArrow->setScale(0.1);
+	rightArrow->setPosition(rightArrowX + m_tilemap->getTileSize().width / 2, rightArrowY + m_tilemap->getTileSize().height / 2);
+	rightArrow->setName("RightArrow");
+	m_gameNode->addChild(rightArrow);
+
 	m_collisionLayer = m_tilemap->getLayer("col");
 	m_collisionLayer->setVisible(false);
 
-	int x = playerSpawnPoint["x"].asInt();
-	int y = playerSpawnPoint["y"].asInt();
-
-	m_character = Sprite::create("img/sprites/caveman01.png");
-	m_character->setScale(0.106);
+	m_character = Sprite::create("img/sprites/character.png");
+	m_character->setScale(0.064);
 	m_character->setZOrder(20);
-	m_character->setPosition(x + m_tilemap->getTileSize().width / 2, y + m_tilemap->getTileSize().height / 2);
-	m_gameNode->addChild(m_character);	
+	if (def->getBoolForKey("FromRight"))
+	{
+		m_character->setFlippedX(true);
+	}
+
+	m_character->setPosition(playerX + m_tilemap->getTileSize().width / 2, playerY + m_tilemap->getTileSize().height / 2);
+	m_gameNode->addChild(m_character);
+	if (area == mapData::HOME_MAP)
+	{
+		//spawn 4 npcs
+		spawnNPC(4);
+	}
 
 	auto leftButton = Sprite::create("img/dpad.png");
 	leftButton->setPosition(visibleSize.width / 10 * 1, visibleSize.height / 6);
@@ -115,9 +196,6 @@ bool Control3::init()
 
 	Director::getInstance()->getEventDispatcher()->addEventListenerWithSceneGraphPriority(listener, this);
 
-	//spawn 2 npcs first
-	spawnNPC(10);
-
 	m_gameNode->setScale(3);
 
 	//setViewpoint(m_character->getPosition());
@@ -148,6 +226,102 @@ void Control3::walk(bool directionRight, Sprite* subject)
 	auto frame2 = RotateTo::create(0.1, 20);
 	auto sequence = Sequence::create(frame1, frame2, NULL);
 	subject->runAction(RepeatForever::create(sequence));
+}
+
+void Control3::popUp(cocos2d::Sprite * subject)
+{
+	if (!m_isCreatedPopUp)
+	{
+		if (!m_gameNode->getChildByName(POPUP_SPRITE))
+		{
+			auto popup = Sprite::create("img/ui/popup_yellow.png");
+			popup->setPosition(subject->getPosition());
+			popup->setName(POPUP_SPRITE);
+			popup->setScaleY(0.7);
+			popup->setScaleX(0.4);
+			popup->setOpacity(0);
+
+			auto house = Sprite::create(buildingData::buildingPath[m_npcStateVector[m_talkingNPCIndex].buildingNum1]);
+			house->setPosition(subject->getPositionX(), subject->getPositionY() + 3);
+			house->setName(HOUSE_ICON_SPRITE);
+			house->setScale(0.5);
+			house->setOpacity(0);
+
+			m_gameNode->addChild(popup);
+			m_gameNode->addChild(house);
+
+			auto moveUp = MoveBy::create(0.7f, Vec2(0.0f, 35));
+			auto fadeIn = FadeIn::create(0.7f);
+			auto action = Spawn::create(moveUp, fadeIn, NULL);
+			auto actionCpy = action->clone();
+			popup->runAction(action);
+			house->runAction(actionCpy);
+			m_isCreatedPopUp = true;
+		}
+	}
+}
+
+void Control3::cleanPopUp()
+{
+	m_gameNode->removeChildByName(POPUP_SPRITE);
+	m_gameNode->removeChildByName(HOUSE_ICON_SPRITE);
+	m_gameNode->removeChildByName(RESOURCE_1);
+	m_gameNode->removeChildByName(RESOURCE_2);
+	m_gameNode->removeChildByName(RESOURCE_3);
+	m_gameNode->removeChildByName(RESOURCE_COUNT_1);
+	m_gameNode->removeChildByName(RESOURCE_COUNT_2);
+	m_gameNode->removeChildByName(RESOURCE_COUNT_3);
+}
+
+void Control3::removePopUp()
+{
+	if (m_isCreatedPopUp)
+	{
+		auto popup = m_gameNode->getChildByName(POPUP_SPRITE);
+		auto house = m_gameNode->getChildByName(HOUSE_ICON_SPRITE);
+		m_isCreatedPopUp = false;
+		if (popup)
+		{
+			auto moveDown = MoveBy::create(0.4f, Vec2(0, -30));
+			auto fadeOut = FadeOut::create(0.4f);
+			auto cleanPopUp = CallFunc::create([this]() {this->cleanPopUp(); });
+
+			auto action = Sequence::create(Spawn::create(moveDown, fadeOut, NULL), cleanPopUp, NULL);
+			auto actionCpy = action->clone();
+			auto actionCpy2 = action->clone();
+			auto actionCpy3 = action->clone();
+			auto actionCpy4 = action->clone();
+			auto actionCpy5 = action->clone();
+			auto actionCpy6 = action->clone();
+			auto actionCpy7 = action->clone();
+
+			popup->runAction(action);
+			house->runAction(actionCpy);
+
+			auto res1 = m_gameNode->getChildByName(RESOURCE_1);
+			auto resCount1 = m_gameNode->getChildByName(RESOURCE_COUNT_1);
+			if (res1)
+			{
+				res1->runAction(actionCpy2);
+				resCount1->runAction(actionCpy5);
+
+				auto res2 = m_gameNode->getChildByName(RESOURCE_2);
+				auto resCount2 = m_gameNode->getChildByName(RESOURCE_COUNT_2);
+				if (res2)
+				{
+					res2->runAction(actionCpy3);
+					resCount2->runAction(actionCpy6);
+					auto res3 = m_gameNode->getChildByName(RESOURCE_3);
+					auto resCount3 = m_gameNode->getChildByName(RESOURCE_COUNT_3);
+					if (res3)
+					{
+						res3->runAction(actionCpy4);
+						resCount3->runAction(actionCpy7);
+					}
+				}
+			}
+		}
+	}
 }
 
 void Control3::npcWalk(bool directionRight, cocos2d::Sprite * subject)
@@ -395,15 +569,128 @@ void Control3::simplePhysics()
 		}
 	}
 
+	for (int i = 0; i < m_npcVector.size(); ++i)
+	{
+		static int talkChecker = 0;
+
+		if (m_character->getBoundingBox().intersectsRect(m_npcVector[i]->getBoundingBox()))
+		{
+			if (!m_isTalking)
+			{
+				m_npcStateVector[i].isTalking = true;
+				m_talkingNPCIndex = i;
+				talkChecker++;
+			}
+			
+			m_isTalking = true;
+		}
+		else
+		{
+			if(m_npcStateVector[i].isTalking)
+			{
+				m_npcStateVector[i].isTalking = false;
+				talkChecker--;
+			}
+
+			if (talkChecker == 0)
+			{
+				m_isTalking = false;
+				removePopUp();
+			}
+		}
+	}
+	if (!m_onNext)
+	{
+		auto leftArrow = m_gameNode->getChildByName("LeftArrow");
+		if (leftArrow)
+		{
+			if (m_character->getBoundingBox().intersectsRect(leftArrow->getBoundingBox()))
+			{
+				//to the left
+				changeArea(false);
+			}
+		}
+		auto rightArrow = m_gameNode->getChildByName("RightArrow");
+		if (rightArrow)
+		{
+			if (m_character->getBoundingBox().intersectsRect(rightArrow->getBoundingBox()))
+			{
+				changeArea(true);
+			}
+		}
+	}
+
 	m_character->setPositionY(m_character->getPositionY() + m_speedY);
 	m_character->setPositionX(m_character->getPositionX() + m_speedX);
 }
 
+void Control3::changeArea(bool right)
+{
+	m_onNext = true;
+	auto def = UserDefault::getInstance();
+	auto area = def->getIntegerForKey("MapArea");
+	
+	if (right)
+	{
+		area++;
+		/*
+		if (area <= 13)
+		{
+			area++;
+		}
+		else
+		{
+			//area = 0;
+		}
+		*/
+		def->setBoolForKey("FromRight", true);
+	}
+	else
+	{
+		area--;
+		/*
+		if (area >= 13)
+		{
+			area++;
+		}
+		else
+		{
+			//area = 0;
+		}
+		*/
+		def->setBoolForKey("FromRight", false);
+	}
+	def->setIntegerForKey("MapArea", area);
+	CCLOG("New Area: %d", area);
+	def->flush();
+	auto resetScene = CallFunc::create([this]() {this->resetScene(); });
+	this->runAction(resetScene);
+}
+
+void Control3::resetScene()
+{
+	auto scene = Control3::createScene();
+	Director::getInstance()->replaceScene(scene);
+}
+
 void Control3::npcAI()
 {
-	
 	for (int i = 0; i < m_npcStateVector.size(); ++i)
 	{
+		if (m_npcStateVector[i].isTalking)
+		{
+			m_npcStateVector[i].stateID = NPC_STATE_IDLE;
+
+			m_npcVector[i]->stopAllActions();
+			m_npcVector[i]->setRotation(0);
+
+			popUp(m_npcVector[i]);
+		}
+		else
+		{
+			
+		}
+
 		if (m_npcStateVector[i].stateID == NPC_STATE_WALKING)
 		{
 			if (m_npcStateVector[i].firstTimeState)
@@ -455,15 +742,16 @@ void Control3::spawnNPC(int npcNumber)
 		//Create a default state first
 		NPCStates randomState;
 		int maxType = NPC_TYPE_PREHISTORIC_MAX-1;
+		int maxBuilding = buildingData::MAX_PREHISTORIC-1;
 		randomState.npcType = cocos2d::RandomHelper::random_int(0, maxType);
+		randomState.buildingNum1 = cocos2d::RandomHelper::random_int(1, maxBuilding);
 		//WARNING: npcStateVector and npcVector has to share the same index!
 		m_npcStateVector.push_back(randomState);
 		m_npcVector.push_back(Sprite::create(npcTypePath[m_npcStateVector[i].npcType]));
 		m_npcVector[i]->setPositionY(m_character->getPositionY());
 		m_npcVector[i]->setPositionX(cocos2d::RandomHelper::random_int(0, 1200) + 200);
-		m_npcVector[i]->setScale(m_character->getScale());
+		m_npcVector[i]->setScale(0.106);
 		m_gameNode->addChild(m_npcVector[i]);
-
 	}
 }
 
@@ -480,7 +768,7 @@ void Control3::onTouchesBegan(const std::vector<cocos2d::Touch*>& touch, cocos2d
 
 	for (auto &t : touch)
 	{
-		Rect touchPoint = Rect(t->getLocation().x, t->getLocation().y, 2, 2);
+		Rect touchPoint = Rect(t->getLocation().x, t->getLocation().y, 1, 1);
 		if (touchPoint.intersectsRect(m_rightRect))
 		{
 			walk(true, m_character);
@@ -500,6 +788,99 @@ void Control3::onTouchesBegan(const std::vector<cocos2d::Touch*>& touch, cocos2d
 		{
 			m_aButtonPressed = true;
 			m_actionTouchID = t->getID();
+		}
+
+		auto icon = m_gameNode->getChildByName(HOUSE_ICON_SPRITE);
+		if (icon != NULL)
+		{
+			if (icon->isVisible())
+			{
+				auto iconPos = m_gameNode->convertToWorldSpace(Vec2(icon->getBoundingBox().getMinX(), icon->getBoundingBox().getMinY()));
+				auto iconRect = Rect(iconPos.x, iconPos.y, icon->getContentSize().width * icon->getScale() * m_gameNode->getScale(), icon->getContentSize().height * icon->getScale() * m_gameNode->getScale());
+
+				if (touchPoint.intersectsRect(iconRect))
+				{
+					auto popup = m_gameNode->getChildByName(POPUP_SPRITE);
+					icon->setPositionY(icon->getPositionY() + 5);
+
+					int resNum = 1;
+					icon->setVisible(false);
+					int buildingNum = m_npcStateVector[m_talkingNPCIndex].buildingNum1;
+					auto res1 = Sprite::create(buildingData::resourcePath[buildingData::buildingRecepe[buildingNum].resource1]);
+					res1->setPosition(icon->getPosition());
+					res1->setName(RESOURCE_1);
+					res1->setScale(0.5);
+					m_gameNode->addChild(res1);
+					std::ostringstream ostr;
+					ostr << buildingData::buildingRecepe[buildingNum].res1Count;
+					std::string count1 = "x" + ostr.str();
+					ostr.str("");
+					auto resCounter1 = LabelTTF::create(count1, "Arial", 3 * m_gameNode->getScale());
+					resCounter1->setColor(Color3B::BLACK);
+					resCounter1->setPosition(res1->getPositionX(), res1->getPositionY() - 15);
+					resCounter1->setName(RESOURCE_COUNT_1);
+					m_gameNode->addChild(resCounter1);
+
+					Sprite* res2 = nullptr;
+					LabelTTF* resCounter2 = nullptr;
+
+					if (buildingData::buildingRecepe[buildingNum].resource2 != buildingData::BUILDING_NONE)
+					{
+						res2 = Sprite::create(buildingData::resourcePath[buildingData::buildingRecepe[buildingNum].resource2]);
+						res2->setPosition(icon->getPositionX() - 33, icon->getPositionY());
+						res2->setName(RESOURCE_2);
+						res2->setScale(0.5);
+						m_gameNode->addChild(res2);
+						ostr << buildingData::buildingRecepe[buildingNum].res2Count;
+						std::string count2 = "X" + ostr.str();
+						ostr.str("");
+						resCounter2 = LabelTTF::create(count2, "Arial", 3 * m_gameNode->getScale());
+						resCounter2->setColor(Color3B::BLACK);
+						resCounter2->setPosition(res2->getPositionX(), res2->getPositionY() - 15);
+						resCounter2->setName(RESOURCE_COUNT_2);
+						m_gameNode->addChild(resCounter2);
+
+						resNum++;
+
+						if (buildingData::buildingRecepe[buildingNum].resource3 != buildingData::BUILDING_NONE)
+						{
+							auto res3 = Sprite::create(buildingData::resourcePath[buildingData::buildingRecepe[buildingNum].resource3]);
+							res3->setPosition(icon->getPositionX() + 33, icon->getPositionY());
+							res3->setName(RESOURCE_3);
+							res3->setScale(0.5);
+							m_gameNode->addChild(res3);
+							ostr << buildingData::buildingRecepe[buildingNum].res3Count;
+							std::string count3 = "X" + ostr.str();
+							auto resCounter3 = LabelTTF::create(count3, "Arial", 3 * m_gameNode->getScale());
+							resCounter3->setColor(Color3B::BLACK);
+							resCounter3->setPosition(res3->getPositionX(), res3->getPositionY() - 15);
+							resCounter3->setName(RESOURCE_COUNT_3);
+							m_gameNode->addChild(resCounter3);
+
+							resNum++;
+						}
+					}
+
+					switch (resNum)
+					{
+					case 1:
+						break;
+					case 2:
+						res1->setPositionX(res1->getPositionX() + 18);
+						resCounter1->setPositionX(res1->getPositionX());
+						res2->setPositionX(res2->getPositionX() + 15);
+						resCounter2->setPositionX(res2->getPositionX());
+						break;
+					case 3:
+						break;
+					default:
+						break;
+					}
+
+					popup->setScaleX(popup->getScaleX() * resNum);
+					popup->setScaleY(1);
+				}
+			}
 		}
 	}
 }

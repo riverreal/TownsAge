@@ -14,10 +14,16 @@ public:
 	virtual void update(float dt);
 
 	void walk(bool directionRight, cocos2d::Sprite* subject);
+	void popUp(cocos2d::Sprite* subject);
+	void cleanPopUp();
+	void removePopUp();
 	void npcWalk(bool directionRight, cocos2d::Sprite* subject);
 	void setViewpoint(cocos2d::Vec2 position);
 	cocos2d::Vec2 convertToTilePosition(cocos2d::Vec2 position);
 	void simplePhysics(); //will go inside update
+
+	void changeArea(bool right);
+	void resetScene();
 
 	void npcAI();
 	void spawnNPC(int npcNumber);
@@ -43,32 +49,44 @@ private:
 		NPCStates() 
 			:stateID(NPC_STATE_IDLE),
 			isBuilding(false),
+			isTalking(false),
 			stateDuration(1.0f),
 			npcType(NPC_TYPE_BEARD),
 			directionRight(false),
 			timeCounter(0),
-			firstTimeState(true)
+			firstTimeState(true),
+			buildingNum1(1),
+			buildingNum2(0),
+			buildingNum3(0)
 		{};
 
 		//Parameter asignment contructor
 		NPCStates(int stateID, bool isBuilding, float stateDuration, int npcType, bool directionRight)
 			:stateID(stateID),
 			isBuilding(isBuilding),
+			isTalking(false),
 			stateDuration(stateDuration),
 			npcType(npcType),
 			directionRight(directionRight),
 			timeCounter(0),
-			firstTimeState(true)
+			firstTimeState(true),
+			buildingNum1(1),
+			buildingNum2(0),
+			buildingNum3(0)
 		{};
 
 		int stateID;
 		bool isBuilding;
+		bool isTalking;
 		//duration of the state in seconds
 		float stateDuration;
 		int npcType;
 		bool directionRight;
 		int timeCounter;
 		bool firstTimeState;
+		int buildingNum1;
+		int buildingNum2;
+		int buildingNum3;
 	};
 
 	cocos2d::Sprite* m_character;
@@ -77,6 +95,8 @@ private:
 	cocos2d::TMXTiledMap* m_tilemap;
 	cocos2d::TMXLayer* m_collisionLayer;
 	bool m_directionRight;
+	bool m_isTalking;
+	bool m_isCreatedPopUp;
 
 	//Control related
 	cocos2d::Rect m_rightRect;
@@ -88,6 +108,18 @@ private:
 
 	cocos2d::Node* m_gameNode;
 	cocos2d::Node* m_uiNode;
+
+	int m_talkingNPCIndex;
+
+	//Sprite names
+	const std::string POPUP_SPRITE = "PopUp";
+	const std::string RESOURCE_1 = "Res1";
+	const std::string RESOURCE_COUNT_1 = "ResCount1";
+	const std::string RESOURCE_2 = "Res2";
+	const std::string RESOURCE_COUNT_2 = "ResCount2";
+	const std::string RESOURCE_3 = "Res3";
+	const std::string RESOURCE_COUNT_3 = "ResCount3";
+	const std::string HOUSE_ICON_SPRITE = "HouseIcon";
 
 	//---------------------
 	//----physics variables/constants
@@ -106,6 +138,7 @@ private:
 	bool m_standing;
 	bool m_onGround;
 	bool m_jumpInstanced;
+	bool m_onNext;
 
 	//player variables
 	float m_speedX;
