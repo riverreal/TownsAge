@@ -44,6 +44,7 @@ bool Control3::init()
 
 	//control init
 	m_aButtonPressed = false;
+	m_jButtonPressed = false;
 
 	//node initialization
 	m_gameNode = Node::create();
@@ -53,7 +54,10 @@ bool Control3::init()
 	m_directionRight = true;
 	m_isTalking = false;
 	m_isCreatedPopUp = false;
+	m_isCreatedActionPopUp = false;
 	m_onNext = false;
+
+	m_talkChecker = 0;
 
 	auto def = UserDefault::getInstance();
 	//Area system
@@ -63,7 +67,6 @@ bool Control3::init()
 	bool fromRight = def->getBoolForKey("FromRight");
 	int playerX;
 	int playerY;
-	CCLOG("AREA: %d", area);
 	//right map
 	if (area > 0)
 	{
@@ -83,7 +86,7 @@ bool Control3::init()
 	//home map
 	else
 	{
-		m_tilemap = TMXTiledMap::create("img/tilemap/test.tmx");
+		m_tilemap = TMXTiledMap::create("img/tilemap/home.tmx");
 	}
 
 	m_gameNode->addChild(m_tilemap, -1);
@@ -104,19 +107,35 @@ bool Control3::init()
 		playerY = playerSpawnPoint["y"].asInt();
 	}
 	*/
-	//else
-	//{
-		if (fromRight)
+	
+	if (fromRight)
+	{
+		playerX = leftArrowX + 52;
+		playerY = leftArrowY;
+	}
+	else
+	{
+		playerX = rightArrowX - 52;
+		playerY = rightArrowY;
+	}
+
+	auto collectableGroup = m_tilemap->getObjectGroup("collectable");
+	if (collectableGroup)
+	{
+		auto collectVector = collectableGroup->getObjects();
+		for (auto& item : collectVector)
 		{
-			playerX = leftArrowX + 42;
-			playerY = leftArrowY;
+			if (item.asValueMap()["name"].asString() == "tree")
+			{
+				auto sprite = Sprite::create("img/resources/tree02.png");
+				sprite->setPositionX(item.asValueMap()["x"].asInt() + sprite->getContentSize().width / 2);
+				sprite->setPositionY(item.asValueMap()["y"].asInt() + sprite->getContentSize().height / 2);
+				sprite->setName(item.asValueMap()["name"].asString());
+				m_gameNode->addChild(sprite);
+				m_resourceVector.push_back(sprite);
+			}
 		}
-		else
-		{
-			playerX = rightArrowX - 42;
-			playerY = rightArrowY;
-		}
-	//}
+	}
 
 	auto leftArrow = Sprite::create("img/ui/red-arrow.png");
 	leftArrow->setRotation(-90);
@@ -132,18 +151,23 @@ bool Control3::init()
 	rightArrow->setName("RightArrow");
 	m_gameNode->addChild(rightArrow);
 
+	auto inventoryFrame = Sprite::create("img/ui/inventory.png");
+	inventoryFrame->setOpacity(100);
+	inventoryFrame->setPosition(visibleSize.width / 2, visibleSize.height / 1.1);
+	m_uiNode->addChild(inventoryFrame);
+
 	m_collisionLayer = m_tilemap->getLayer("col");
 	m_collisionLayer->setVisible(false);
 
-	m_character = Sprite::create("img/sprites/character.png");
-	m_character->setScale(0.064);
+	m_character = Sprite::create("img/sprites/characterBoxed.png");
+	m_character->setScale(0.128);
 	m_character->setZOrder(20);
 	if (def->getBoolForKey("FromRight"))
 	{
 		m_character->setFlippedX(true);
 	}
 
-	m_character->setPosition(playerX + m_tilemap->getTileSize().width / 2, playerY + m_tilemap->getTileSize().height / 2);
+	m_character->setPosition(playerX + m_tilemap->getTileSize().width, playerY + m_tilemap->getTileSize().height);
 	m_gameNode->addChild(m_character);
 	if (area == mapData::HOME_MAP)
 	{
@@ -165,8 +189,14 @@ bool Control3::init()
 	rightButton->setOpacity(100);
 	m_uiNode->addChild(rightButton);
 
+	auto jButton = Sprite::create("img/ui/j-button.png");
+	jButton->setPosition(visibleSize.width / 10 * 7.3, visibleSize.height / 6);
+	jButton->setOpacity(100);
+	jButton->setScale(0.7);
+	m_uiNode->addChild(jButton);
+
 	auto aButton = Sprite::create("img/ui/a-button.png");
-	aButton->setPosition(visibleSize.width / 10 * 8, visibleSize.height / 6);
+	aButton->setPosition(visibleSize.width / 10 * 9, visibleSize.height / 4);
 	aButton->setOpacity(100);
 	aButton->setScale(0.7);
 	m_uiNode->addChild(aButton);
@@ -187,6 +217,7 @@ bool Control3::init()
 
 	m_rightRect = Rect(rightButton->getBoundingBox());
 	m_leftRect = Rect(leftButton->getBoundingBox());
+	m_jButtonRect = Rect(jButton->getBoundingBox());
 	m_aButtonRect = Rect(aButton->getBoundingBox());
 
 	auto listener = EventListenerTouchAllAtOnce::create();
@@ -196,14 +227,25 @@ bool Control3::init()
 
 	Director::getInstance()->getEventDispatcher()->addEventListenerWithSceneGraphPriority(listener, this);
 
-	m_gameNode->setScale(3);
+	m_gameNode->setScale(1.5);
 
 	//setViewpoint(m_character->getPosition());
 	m_gameNode->setPosition(Vec2::ZERO);
 	m_uiNode->setPosition(Vec2::ZERO);
 	this->addChild(m_gameNode);
 	this->addChild(m_uiNode);
+	//mid day
+	//bg = LayerGradient::create(Color4B(34, 98, 206, 255), Color4B(193, 205, 219, 255), Vec2(0, -1));
+	//Dawn
+	//bg = LayerGradient::create(Color4B(11, 40, 110, 255), Color4B(169, 110, 78, 255), Vec2(0, -1));
+	
+	auto bg = LayerGradient::create(Color4B(34, 98, 206, 255), Color4B(173, 240, 245, 255), Vec2(0, -1));
+	this->addChild(bg, -50);
 
+	setViewpoint(m_character->getPosition());
+	int index = m_resourceVector.size();
+
+	CCLOG("Size: %d", index);
 	this->scheduleUpdate();
 
     return true;
@@ -225,7 +267,7 @@ void Control3::walk(bool directionRight, Sprite* subject)
 	auto frame1 = RotateTo::create(0.1, -20);
 	auto frame2 = RotateTo::create(0.1, 20);
 	auto sequence = Sequence::create(frame1, frame2, NULL);
-	subject->runAction(RepeatForever::create(sequence));
+	//subject->runAction(RepeatForever::create(sequence));
 }
 
 void Control3::popUp(cocos2d::Sprite * subject)
@@ -237,21 +279,21 @@ void Control3::popUp(cocos2d::Sprite * subject)
 			auto popup = Sprite::create("img/ui/popup_yellow.png");
 			popup->setPosition(subject->getPosition());
 			popup->setName(POPUP_SPRITE);
-			popup->setScaleY(0.7);
-			popup->setScaleX(0.4);
+			popup->setScaleY(1.5);
+			popup->setScaleX(0.8);
 			popup->setOpacity(0);
 
 			auto house = Sprite::create(buildingData::buildingPath[m_npcStateVector[m_talkingNPCIndex].buildingNum1]);
 			house->setPosition(subject->getPositionX(), subject->getPositionY() + 3);
 			house->setName(HOUSE_ICON_SPRITE);
-			house->setScale(0.5);
+			house->setScale(1.2);
 			house->setOpacity(0);
 
 			m_gameNode->addChild(popup);
 			m_gameNode->addChild(house);
 
-			auto moveUp = MoveBy::create(0.7f, Vec2(0.0f, 35));
-			auto fadeIn = FadeIn::create(0.7f);
+			auto moveUp = MoveBy::create(0.5f, Vec2(0.0f, 80));
+			auto fadeIn = FadeIn::create(0.5f);
 			auto action = Spawn::create(moveUp, fadeIn, NULL);
 			auto actionCpy = action->clone();
 			popup->runAction(action);
@@ -282,8 +324,8 @@ void Control3::removePopUp()
 		m_isCreatedPopUp = false;
 		if (popup)
 		{
-			auto moveDown = MoveBy::create(0.4f, Vec2(0, -30));
-			auto fadeOut = FadeOut::create(0.4f);
+			auto moveDown = MoveBy::create(0.3f, Vec2(0, -80));
+			auto fadeOut = FadeOut::create(0.3f);
 			auto cleanPopUp = CallFunc::create([this]() {this->cleanPopUp(); });
 
 			auto action = Sequence::create(Spawn::create(moveDown, fadeOut, NULL), cleanPopUp, NULL);
@@ -348,6 +390,46 @@ void Control3::npcWalk(bool directionRight, cocos2d::Sprite * subject)
 	subject->runAction(RepeatForever::create(sequence));
 }
 
+void Control3::resourcePopup()
+{
+	bool created = false;
+	for (int i = 0; i < m_resourceVector.size(); ++i)
+	{
+		auto resource = m_resourceVector[i];
+		
+		if (m_character->getBoundingBox().intersectsRect(resource->getBoundingBox()))
+		{
+			if (resource->getName() == "tree")
+			{
+				if (!m_isCreatedActionPopUp)
+				{
+					auto popup = Sprite::create("img/ui/axe.png");
+					popup->setPosition(m_character->getPositionX(), m_character->getBoundingBox().getMaxY() + popup->getContentSize().height / 2);
+					popup->setName("actionPopup");
+					m_gameNode->addChild(popup);
+					m_isCreatedActionPopUp = true;
+					created = true;
+				}
+			}
+		}
+		else
+		{
+			if (resource->getName() == "tree")
+			{
+				if (!created)
+				{
+					if (m_isCreatedActionPopUp)
+					{
+						m_gameNode->removeChildByName("actionPopup");
+						m_isCreatedActionPopUp = false;
+					}
+				}
+			}
+		}
+	}
+	
+}
+
 void Control3::setViewpoint(cocos2d::Vec2 position)
 {
 	auto visibleSize = Director::getInstance()->getWinSize();
@@ -398,61 +480,134 @@ void Control3::simplePhysics()
 	//		3				2
 	//	(MIN, MIN)		(MAX,MIN)
 
-	Vec2 characterColCheckPoints[4] = 
+
+	auto characterBB = m_character->getBoundingBox();
+	auto borderToToeDiff = (characterBB.getMaxX() - characterBB.getMidX()) / 1.5;
+	auto borderToMidDiff = (characterBB.getMaxY() - characterBB.getMidY()) / 2;
+	Vec2 characterColCheckPoints[] = 
 	{
-		Vec2(m_character->getBoundingBox().getMinX(), m_character->getBoundingBox().getMaxY()), //0 TOP_LEFT
-		Vec2(m_character->getBoundingBox().getMaxX(), m_character->getBoundingBox().getMaxY()), //1 TOP_RIGHT
-		Vec2(m_character->getBoundingBox().getMaxX(), m_character->getBoundingBox().getMinY()), //2 BOTTOM_RIGHT
-		Vec2(m_character->getBoundingBox().getMinX(), m_character->getBoundingBox().getMinY())  //3 BOTTOM_LEFT
+		Vec2(characterBB.getMinX() + borderToToeDiff/2, characterBB.getMaxY()), //0 TOP_LEFT     <--
+		Vec2(characterBB.getMaxX() - borderToToeDiff/2, characterBB.getMaxY()), //1 TOP_RIGHT    -->
+		Vec2(characterBB.getMidX(), characterBB.getMaxY()), //2 TOP_MID      ---
+		Vec2(characterBB.getMinX() + borderToToeDiff/2, characterBB.getMidY() + borderToMidDiff), //3 MID_LEFT1     <--
+		Vec2(characterBB.getMaxX() - borderToToeDiff/2, characterBB.getMidY() + borderToMidDiff), //4 MID_RIGHT1    -->
+		Vec2(characterBB.getMaxX() - borderToToeDiff, characterBB.getMinY()), //5 BOTTOM_RIGHT -->
+		Vec2(characterBB.getMinX() + borderToToeDiff, characterBB.getMinY()), //6 BOTTOM_LEFT  <--
+		Vec2(characterBB.getMidX(), characterBB.getMinY()),  //7 BOTTOM_MID   ---
+		Vec2(characterBB.getMinX() + borderToToeDiff/2, characterBB.getMidY() - borderToMidDiff/2), //8 MID_LEFT2
+		Vec2(characterBB.getMaxX() - borderToToeDiff/2, characterBB.getMidY() - borderToMidDiff/2), //9 MID_RIGHT2
 	};
 
-	enum COL_CHECKPOINTS{
-		TOP_LEFT,
-		TOP_RIGHT,
-		BOTTOM_RIGHT,
-		BOTTOM_LEFT
+	Vec2 rightCheckPoints[] =
+	{
+		characterColCheckPoints[1],
+		characterColCheckPoints[4],
+		characterColCheckPoints[9],
+		Vec2(characterColCheckPoints[5].x, characterColCheckPoints[5].y + 10)
 	};
 
+	Vec2 leftCheckPoints[] = 
+	{
+		characterColCheckPoints[0],
+		characterColCheckPoints[3],
+		characterColCheckPoints[8],
+		Vec2(characterColCheckPoints[6].x, characterColCheckPoints[6].y + 10),
+	};
+
+	//if not stopped
 	if (!m_standing)
 	{
+		//RIGHT Collision detection
 		if (m_directionRight)
 		{
-			auto nextTile = convertToTilePosition(Vec2(m_character->getBoundingBox().getMaxX(), m_character->getPositionY()));
-			if (m_collisionLayer->getTileAt(nextTile) == NULL)
+			bool nulled = false;
+			for (int i = 0; i < 4; ++i)
 			{
-				if (m_speedX < (-m_accelerationX * 10))
+				auto nextTile = convertToTilePosition(rightCheckPoints[i]);
+				auto rightTile = m_collisionLayer->getTileAt(nextTile);
+				if (rightTile != NULL)
 				{
-					m_speedX = -m_accelerationX * 10;
+					if (m_character->getBoundingBox().intersectsRect(rightTile->getBoundingBox()))
+					{
+						m_speedX = 0;
+						nulled = true;
+						/*
+						auto correctionDelta = rightCheckPoints[0].x - rightTile->getBoundingBox().getMinX();
+						if (correctionDelta > 0 && correctionDelta < 20)
+						{
+							m_character->setPositionX(m_character->getPositionX() - correctionDelta);
+						}
+						*/
+					}
 				}
+				else
+				{
+					if (m_speedX < (-m_accelerationX * 10))
+					{
+						m_speedX = -m_accelerationX * 10;
+					}
 
-				m_speedX += m_accelerationX;
-				m_speedX = MIN(m_speedX, MAX_SPEED);
+					m_speedX += m_accelerationX;
+					m_speedX = MIN(m_speedX, MAX_SPEED);
+				}
 			}
-			else
+
+			if (nulled)
 			{
+				//correction
 				m_speedX = 0;
+
 			}
+			
+			
 		}
+		//LEFT Collision detection
 		else
 		{
-			auto nextTile = convertToTilePosition(Vec2(m_character->getBoundingBox().getMinX(), m_character->getPositionY()));
-			if (m_collisionLayer->getTileAt(nextTile) == NULL)
+			bool nulled = false;
+			for (int i = 0; i < 4; ++i)
 			{
-				if (m_speedX > (m_accelerationX * 10))
+				auto nextTile = convertToTilePosition(leftCheckPoints[i]);
+				auto leftTile = m_collisionLayer->getTileAt(nextTile);
+				if (leftTile != NULL)
 				{
-					m_speedX = m_accelerationX * 10;
+					if (m_character->getBoundingBox().intersectsRect(leftTile->getBoundingBox()))
+					{
+						m_speedX = 0;
+						/*
+						auto correctionDelta = leftTile->getBoundingBox().getMaxX() - leftCheckPoints[0].x;
+						if ( correctionDelta > 0 && correctionDelta < 20)
+						{
+							m_character->setPositionX(m_character->getPositionX() + correctionDelta);
+						}
+						*/
+						nulled = true;
+					}
 				}
-				m_speedX -= m_accelerationX;
-				m_speedX = MAX(m_speedX, -MAX_SPEED);
+				else
+				{
+					if (m_speedX >(m_accelerationX * 10))
+					{
+						m_speedX = m_accelerationX * 10;
+					}
+					m_speedX -= m_accelerationX;
+					m_speedX = MAX(m_speedX, -MAX_SPEED);
+				}
 			}
-			else
+
+			if (nulled)
 			{
+				//correction
 				m_speedX = 0;
+
 			}
 		}
 	}
+	//if the player is standing
 	else
 	{
+		//Add Frinction to stop player
+
 		if (m_speedX > 0)
 		{
 			//friction only when not moving
@@ -479,78 +634,62 @@ void Control3::simplePhysics()
 		}
 	}
 
-	//up-down collision detection
-	auto nextTileBottom = convertToTilePosition(Vec2(m_character->getBoundingBox().getMidX(), m_character->getBoundingBox().getMinY()));
-	auto bottomTile = m_collisionLayer->getTileAt(nextTileBottom);
-	if (bottomTile != NULL)
+	//Bottom Collision detection
+	for (int i = 0; i < 3; ++i)
 	{
-		if(m_speedY < 0)
-		{
-			m_speedY = 0;
-			if (!m_aButtonPressed)
-			{
-				m_onGround = true;
-			}
-
-			//position correction
-			
-			auto correctionDelta = bottomTile->getBoundingBox().getMaxY() - m_character->getBoundingBox().getMinY();
-				//m_character->setPositionY(m_character->getPositionY() + correctionDelta);
-			if (correctionDelta > 6)
-			{
-				m_speedY += correctionDelta / 5;
-			}
-		}
-	}
-
-	/*for (int i = 0; i < 2; ++i)
-	{
-		auto nextTileBottom = convertToTilePosition(characterColCheckPoints[i+2]); //i+2 = BOTTOM
+		auto nextTileBottom = convertToTilePosition(characterColCheckPoints[i + 5]); //i+5 = BOTTOM
 		auto bottomTile = m_collisionLayer->getTileAt(nextTileBottom);
 		if (bottomTile != NULL)
 		{
-			if (m_speedY < 0)
+			if (m_character->getBoundingBox().intersectsRect(bottomTile->getBoundingBox()))
 			{
-				m_speedY = 0;
-				if (!m_aButtonPressed)
-				{
-					m_onGround = true;
-				}
-
-				//position correction
-
 				auto correctionDelta = bottomTile->getBoundingBox().getMaxY() - m_character->getBoundingBox().getMinY();
-				//m_character->setPositionY(m_character->getPositionY() + correctionDelta);
-				if (correctionDelta > 4)
+				if (correctionDelta <= 10)
 				{
-					m_speedY += correctionDelta / 5;
+					m_character->setPositionY(m_character->getPositionY() + correctionDelta);
+					if (m_speedY < 0)
+					{
+						m_speedY = 0;
+						if (!m_jButtonPressed)
+						{
+							m_onGround = true;
+						}
+					}
 				}
-			}
-		}*/
-
-	auto nextTileTop = convertToTilePosition(Vec2(m_character->getBoundingBox().getMidX(), m_character->getBoundingBox().getMaxY()));
-	auto upperTile = m_collisionLayer->getTileAt(nextTileTop);
-	if (m_collisionLayer->getTileAt(nextTileTop) != NULL)
-	{
-		if (m_speedY > 0)
-		{
-			m_speedY = 0;
-			m_jumpInstanced = false;
-
-			//position correction
-
-			auto correctionDelta = upperTile->getBoundingBox().getMinY() - m_character->getBoundingBox().getMaxY();
-			if (correctionDelta < -6)
-			{
-				m_speedY += correctionDelta / 5;
 			}
 		}
 	}
+
+	//TOP Collision detection
+	for (int i = 0; i < 3; ++i)
+	{
+		auto nextTileTop = convertToTilePosition(characterColCheckPoints[i]);
+		auto upperTile = m_collisionLayer->getTileAt(nextTileTop);
+		if (upperTile != NULL)
+		{
+			if (m_character->getBoundingBox().intersectsRect(upperTile->getBoundingBox()))
+			{
+				if (m_speedY > 0)
+				{
+					m_speedY = 0;
+					m_jumpInstanced = false;
+
+					//position correction
+					auto correctionDelta = upperTile->getBoundingBox().getMinY() - m_character->getBoundingBox().getMaxY();
+					if (correctionDelta < -6)
+					{
+						//m_speedY += correctionDelta / 5;
+					}
+				}
+			}
+		}
+	}
+	
 
 	//-------------------------------
 	//---------Jumping---------------
 	//-------------------------------
-	if (m_aButtonPressed)
+	if (m_jButtonPressed)
 	{
 		if (m_onGround && !m_jumpInstanced)
 		{
@@ -571,15 +710,13 @@ void Control3::simplePhysics()
 
 	for (int i = 0; i < m_npcVector.size(); ++i)
 	{
-		static int talkChecker = 0;
-
 		if (m_character->getBoundingBox().intersectsRect(m_npcVector[i]->getBoundingBox()))
 		{
 			if (!m_isTalking)
 			{
 				m_npcStateVector[i].isTalking = true;
 				m_talkingNPCIndex = i;
-				talkChecker++;
+				m_talkChecker++;
 			}
 			
 			m_isTalking = true;
@@ -589,10 +726,10 @@ void Control3::simplePhysics()
 			if(m_npcStateVector[i].isTalking)
 			{
 				m_npcStateVector[i].isTalking = false;
-				talkChecker--;
+				m_talkChecker--;
 			}
 
-			if (talkChecker == 0)
+			if (m_talkChecker == 0)
 			{
 				m_isTalking = false;
 				removePopUp();
@@ -661,7 +798,6 @@ void Control3::changeArea(bool right)
 		def->setBoolForKey("FromRight", false);
 	}
 	def->setIntegerForKey("MapArea", area);
-	CCLOG("New Area: %d", area);
 	def->flush();
 	auto resetScene = CallFunc::create([this]() {this->resetScene(); });
 	this->runAction(resetScene);
@@ -685,10 +821,6 @@ void Control3::npcAI()
 			m_npcVector[i]->setRotation(0);
 
 			popUp(m_npcVector[i]);
-		}
-		else
-		{
-			
 		}
 
 		if (m_npcStateVector[i].stateID == NPC_STATE_WALKING)
@@ -748,9 +880,9 @@ void Control3::spawnNPC(int npcNumber)
 		//WARNING: npcStateVector and npcVector has to share the same index!
 		m_npcStateVector.push_back(randomState);
 		m_npcVector.push_back(Sprite::create(npcTypePath[m_npcStateVector[i].npcType]));
-		m_npcVector[i]->setPositionY(m_character->getPositionY());
-		m_npcVector[i]->setPositionX(cocos2d::RandomHelper::random_int(0, 1200) + 200);
-		m_npcVector[i]->setScale(0.106);
+		m_npcVector[i]->setPositionY(m_character->getPositionY() - 5);
+		m_npcVector[i]->setPositionX(cocos2d::RandomHelper::random_int(0, 2800) + 1500);
+		m_npcVector[i]->setScale(0.212);
 		m_gameNode->addChild(m_npcVector[i]);
 	}
 }
@@ -760,6 +892,7 @@ void Control3::update(float dt)
 	setViewpoint(m_character->getPosition());
 	simplePhysics();
 	npcAI();
+	resourcePopup();
 }
 
 void Control3::onTouchesBegan(const std::vector<cocos2d::Touch*>& touch, cocos2d::Event* eventt)
@@ -784,9 +917,9 @@ void Control3::onTouchesBegan(const std::vector<cocos2d::Touch*>& touch, cocos2d
 			m_moveTouchID = t->getID();
 		}
 
-		if (touchPoint.intersectsRect(m_aButtonRect))
+		if (touchPoint.intersectsRect(m_jButtonRect))
 		{
-			m_aButtonPressed = true;
+			m_jButtonPressed = true;
 			m_actionTouchID = t->getID();
 		}
 
@@ -800,8 +933,12 @@ void Control3::onTouchesBegan(const std::vector<cocos2d::Touch*>& touch, cocos2d
 
 				if (touchPoint.intersectsRect(iconRect))
 				{
+					int fontSize = 14;
+					int resSize = 1.2;
+					int outline = 0;
+
 					auto popup = m_gameNode->getChildByName(POPUP_SPRITE);
-					icon->setPositionY(icon->getPositionY() + 5);
+					icon->setPositionY(icon->getPositionY() + 11);
 
 					int resNum = 1;
 					icon->setVisible(false);
@@ -809,34 +946,36 @@ void Control3::onTouchesBegan(const std::vector<cocos2d::Touch*>& touch, cocos2d
 					auto res1 = Sprite::create(buildingData::resourcePath[buildingData::buildingRecepe[buildingNum].resource1]);
 					res1->setPosition(icon->getPosition());
 					res1->setName(RESOURCE_1);
-					res1->setScale(0.5);
+					res1->setScale(resSize);
 					m_gameNode->addChild(res1);
 					std::ostringstream ostr;
 					ostr << buildingData::buildingRecepe[buildingNum].res1Count;
 					std::string count1 = "x" + ostr.str();
 					ostr.str("");
-					auto resCounter1 = LabelTTF::create(count1, "Arial", 3 * m_gameNode->getScale());
+					auto resCounter1 = Label::createWithTTF(count1, "fonts/arial.ttf", fontSize * m_gameNode->getScale());
 					resCounter1->setColor(Color3B::BLACK);
-					resCounter1->setPosition(res1->getPositionX(), res1->getPositionY() - 15);
+					resCounter1->enableOutline(Color4B::BLACK, outline);
+					resCounter1->setPosition(res1->getPositionX(), res1->getPositionY() - 30);
 					resCounter1->setName(RESOURCE_COUNT_1);
 					m_gameNode->addChild(resCounter1);
 
 					Sprite* res2 = nullptr;
-					LabelTTF* resCounter2 = nullptr;
+					Label* resCounter2 = nullptr;
 
 					if (buildingData::buildingRecepe[buildingNum].resource2 != buildingData::BUILDING_NONE)
 					{
 						res2 = Sprite::create(buildingData::resourcePath[buildingData::buildingRecepe[buildingNum].resource2]);
-						res2->setPosition(icon->getPositionX() - 33, icon->getPositionY());
+						res2->setPosition(icon->getPositionX() - 60, icon->getPositionY());
 						res2->setName(RESOURCE_2);
-						res2->setScale(0.5);
+						res2->setScale(resSize);
 						m_gameNode->addChild(res2);
 						ostr << buildingData::buildingRecepe[buildingNum].res2Count;
-						std::string count2 = "X" + ostr.str();
+						std::string count2 = "x" + ostr.str();
 						ostr.str("");
-						resCounter2 = LabelTTF::create(count2, "Arial", 3 * m_gameNode->getScale());
+						resCounter2 = Label::createWithTTF(count2, "fonts/arial.ttf", fontSize * m_gameNode->getScale());
 						resCounter2->setColor(Color3B::BLACK);
-						resCounter2->setPosition(res2->getPositionX(), res2->getPositionY() - 15);
+						resCounter2->enableOutline(Color4B::BLACK, outline);
+						resCounter2->setPosition(res2->getPositionX(), res2->getPositionY() - 30);
 						resCounter2->setName(RESOURCE_COUNT_2);
 						m_gameNode->addChild(resCounter2);
 
@@ -845,15 +984,16 @@ void Control3::onTouchesBegan(const std::vector<cocos2d::Touch*>& touch, cocos2d
 						if (buildingData::buildingRecepe[buildingNum].resource3 != buildingData::BUILDING_NONE)
 						{
 							auto res3 = Sprite::create(buildingData::resourcePath[buildingData::buildingRecepe[buildingNum].resource3]);
-							res3->setPosition(icon->getPositionX() + 33, icon->getPositionY());
+							res3->setPosition(icon->getPositionX() + 60, icon->getPositionY());
 							res3->setName(RESOURCE_3);
-							res3->setScale(0.5);
+							res3->setScale(resSize);
 							m_gameNode->addChild(res3);
 							ostr << buildingData::buildingRecepe[buildingNum].res3Count;
-							std::string count3 = "X" + ostr.str();
-							auto resCounter3 = LabelTTF::create(count3, "Arial", 3 * m_gameNode->getScale());
+							std::string count3 = "x" + ostr.str();
+							auto resCounter3 = Label::createWithTTF(count3, "fonts/arial.ttf", fontSize * m_gameNode->getScale());
 							resCounter3->setColor(Color3B::BLACK);
-							resCounter3->setPosition(res3->getPositionX(), res3->getPositionY() - 15);
+							resCounter3->enableOutline(Color4B::BLACK, outline);
+							resCounter3->setPosition(res3->getPositionX(), res3->getPositionY() - 30);
 							resCounter3->setName(RESOURCE_COUNT_3);
 							m_gameNode->addChild(resCounter3);
 
@@ -866,9 +1006,9 @@ void Control3::onTouchesBegan(const std::vector<cocos2d::Touch*>& touch, cocos2d
 					case 1:
 						break;
 					case 2:
-						res1->setPositionX(res1->getPositionX() + 18);
+						res1->setPositionX(res1->getPositionX() + 40);
 						resCounter1->setPositionX(res1->getPositionX());
-						res2->setPositionX(res2->getPositionX() + 15);
+						res2->setPositionX(res2->getPositionX() + 20);
 						resCounter2->setPositionX(res2->getPositionX());
 						break;
 					case 3:
@@ -878,7 +1018,7 @@ void Control3::onTouchesBegan(const std::vector<cocos2d::Touch*>& touch, cocos2d
 					}
 
 					popup->setScaleX(popup->getScaleX() * resNum);
-					popup->setScaleY(1);
+					popup->setScaleY(2);
 				}
 			}
 		}
@@ -928,7 +1068,7 @@ void Control3::onTouchesEnded(const std::vector<cocos2d::Touch*>& touch, cocos2d
 		}
 		else if (t->getID() == m_actionTouchID)
 		{
-			m_aButtonPressed = false;
+			m_jButtonPressed = false;
 			m_jumpInstanced = false;
 			m_actionTouchID = -1;
 		}

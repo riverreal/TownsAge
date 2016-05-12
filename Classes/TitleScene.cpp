@@ -1,6 +1,4 @@
 #include "TitleScene.h"
-#include "ControlTesting01.h"
-#include "ControlTesting02.h"
 #include "ControlTesting03.h"
 #include "GameData.h"
 
@@ -80,14 +78,14 @@ bool TitlleScene::init()
 
 	def->flush();
 
-	auto control1 = MenuItemFont::create("Half Screen", CC_CALLBACK_1(TitlleScene::menuTransitionCallback, this, 0)); //index 0
-	control1->setPosition(origin.x + visibleSize.width/2, origin.y + visibleSize.height*4/6);
-	auto control2 = MenuItemFont::create("Classic", CC_CALLBACK_1(TitlleScene::menuTransitionCallback, this, 1)); //index 1
-	control2->setPosition(origin.x + visibleSize.width / 2, origin.y + visibleSize.height * 3 / 6);
-	auto control3 = MenuItemFont::create("Sliding", CC_CALLBACK_1(TitlleScene::menuTransitionCallback, this, 2)); //index 2
-	control3->setPosition(origin.x + visibleSize.width / 2, origin.y + visibleSize.height * 2 / 6);
+	//auto control1 = MenuItemFont::create("Half Screen", CC_CALLBACK_1(TitlleScene::menuTransitionCallback, this, 0)); //index 0
+	//control1->setPosition(origin.x + visibleSize.width/2, origin.y + visibleSize.height*4/6);
+	//auto control2 = MenuItemFont::create("Classic", CC_CALLBACK_1(TitlleScene::menuTransitionCallback, this, 1)); //index 1
+	//control2->setPosition(origin.x + visibleSize.width / 2, origin.y + visibleSize.height * 3 / 6);
+	auto control3 = MenuItemFont::create("PLAY", CC_CALLBACK_1(TitlleScene::menuTransitionCallback, this, 2)); //index 2
+	control3->setPosition(origin.x + visibleSize.width / 2, visibleSize.height / 2);
 
-	auto controlMenu = Menu::create(control1, control2, control3, NULL);
+	auto controlMenu = Menu::create(control3, NULL);
 	controlMenu->setPosition(Vec2::ZERO);
 	this->addChild(controlMenu);
 
@@ -111,10 +109,10 @@ void TitlleScene::menuTransitionCallback(cocos2d::Ref* pSender, int index)
 	switch (index)
 	{
 	case 0: //index 0
-		scene = Control1::createScene();
+		//scene = Control1::createScene();
 		break;
 	case 1: //index 1
-		scene = Control2::createScene();
+		//scene = Control2::createScene();
 		break;
 	case 2: //index 2
 		scene = Control3::createScene();

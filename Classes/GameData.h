@@ -129,7 +129,7 @@ namespace buildingData
 	const building buildingRecepe[] =
 	{
 		building("", BUILDING_NONE, 0, BUILDING_NONE, 0, BUILDING_NONE, 0),
-		building("house", WOOD, 5, BUILDING_NONE, 0, BUILDING_NONE, 0),
+		building("house", WOOD, 5, STONE, 3, WOOD, 30),
 		building("tower", WOOD, 10, STONE, 5, BUILDING_NONE, 0)
 	};
 	

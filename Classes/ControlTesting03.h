@@ -18,6 +18,7 @@ public:
 	void cleanPopUp();
 	void removePopUp();
 	void npcWalk(bool directionRight, cocos2d::Sprite* subject);
+	void resourcePopup();
 	void setViewpoint(cocos2d::Vec2 position);
 	cocos2d::Vec2 convertToTilePosition(cocos2d::Vec2 position);
 	void simplePhysics(); //will go inside update
@@ -91,18 +92,23 @@ private:
 
 	cocos2d::Sprite* m_character;
 	std::vector<cocos2d::Sprite*> m_npcVector;
+	std::vector<cocos2d::Sprite*> m_resourceVector;
 	std::vector<NPCStates> m_npcStateVector;
 	cocos2d::TMXTiledMap* m_tilemap;
 	cocos2d::TMXLayer* m_collisionLayer;
 	bool m_directionRight;
 	bool m_isTalking;
 	bool m_isCreatedPopUp;
+	bool m_isCreatedActionPopUp;
+	int m_talkChecker;
 
 	//Control related
 	cocos2d::Rect m_rightRect;
 	cocos2d::Rect m_leftRect;
 	bool m_aButtonPressed;
+	bool m_jButtonPressed;
 	cocos2d::Rect m_aButtonRect;
+	cocos2d::Rect m_jButtonRect;
 	int m_moveTouchID;
 	int m_actionTouchID;
 
