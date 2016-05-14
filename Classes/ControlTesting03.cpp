@@ -56,6 +56,11 @@ bool Control3::init()
 	m_isCreatedPopUp = false;
 	m_isCreatedActionPopUp = false;
 	m_onNext = false;
+	m_isActing = false;
+	m_actingWithEnemy = false;
+	m_actingInstanced = false;
+
+	m_actedResourceCount = 0;
 
 	m_talkChecker = 0;
 
@@ -72,7 +77,7 @@ bool Control3::init()
 	{
 		if (def->getIntegerForKey(mapData::rightMap[area].c_str()) == mapData::FOREST01)
 		{
-			m_tilemap = TMXTiledMap::create("img/tilemap/forest01.tmx");
+			m_tilemap = TMXTiledMap::create("img/tilemap/forest02.tmx");
 		}
 	}
 	//left map
@@ -80,7 +85,7 @@ bool Control3::init()
 	{
 		if (def->getIntegerForKey(mapData::leftMap[abs(area)].c_str()) == mapData::FOREST01)
 		{
-			m_tilemap = TMXTiledMap::create("img/tilemap/forest01.tmx");
+			m_tilemap = TMXTiledMap::create("img/tilemap/forest02.tmx");
 		}
 	}
 	//home map
@@ -134,6 +139,15 @@ bool Control3::init()
 				m_gameNode->addChild(sprite);
 				m_resourceVector.push_back(sprite);
 			}
+			else if (item.asValueMap()["name"].asString() == "appletree")
+			{
+				auto sprite = Sprite::create("img/resources/tree03.png");
+				sprite->setPositionX(item.asValueMap()["x"].asInt() + sprite->getContentSize().width / 2);
+				sprite->setPositionY(item.asValueMap()["y"].asInt() + sprite->getContentSize().height / 2);
+				sprite->setName(item.asValueMap()["name"].asString());
+				m_gameNode->addChild(sprite);
+				m_resourceVector.push_back(sprite);
+			}
 		}
 	}
 
@@ -151,10 +165,32 @@ bool Control3::init()
 	rightArrow->setName("RightArrow");
 	m_gameNode->addChild(rightArrow);
 
+	m_inventoryY = visibleSize.height / 1.1;
 	auto inventoryFrame = Sprite::create("img/ui/inventory.png");
 	inventoryFrame->setOpacity(100);
 	inventoryFrame->setPosition(visibleSize.width / 2, visibleSize.height / 1.1);
 	m_uiNode->addChild(inventoryFrame);
+
+	m_inventorySlot[0].itemType = def->getIntegerForKey("inventorySlotType01");
+	m_inventorySlot[1].itemType = def->getIntegerForKey("inventorySlotType02");
+	m_inventorySlot[2].itemType = def->getIntegerForKey("inventorySlotType03");
+	m_inventorySlot[3].itemType = def->getIntegerForKey("inventorySlotType04");
+	m_inventorySlot[4].itemType = def->getIntegerForKey("inventorySlotType05");
+	m_inventorySlot[5].itemType = def->getIntegerForKey("inventorySlotType06");
+	m_inventorySlot[6].itemType = def->getIntegerForKey("inventorySlotType07");
+	m_inventorySlot[7].itemType = def->getIntegerForKey("inventorySlotType08");
+	m_inventorySlot[8].itemType = def->getIntegerForKey("inventorySlotType09");
+	m_inventorySlot[9].itemType = def->getIntegerForKey("inventorySlotType10");
+	m_inventorySlot[0].itemAmount = def->getIntegerForKey("inventorySlotAmount01");
+	m_inventorySlot[1].itemAmount = def->getIntegerForKey("inventorySlotAmount02");
+	m_inventorySlot[2].itemAmount = def->getIntegerForKey("inventorySlotAmount03");
+	m_inventorySlot[3].itemAmount = def->getIntegerForKey("inventorySlotAmount04");
+	m_inventorySlot[4].itemAmount = def->getIntegerForKey("inventorySlotAmount05");
+	m_inventorySlot[5].itemAmount = def->getIntegerForKey("inventorySlotAmount06");
+	m_inventorySlot[6].itemAmount = def->getIntegerForKey("inventorySlotAmount07");
+	m_inventorySlot[7].itemAmount = def->getIntegerForKey("inventorySlotAmount08");
+	m_inventorySlot[8].itemAmount = def->getIntegerForKey("inventorySlotAmount09");
+	m_inventorySlot[9].itemAmount = def->getIntegerForKey("inventorySlotAmount10");
 
 	m_collisionLayer = m_tilemap->getLayer("col");
 	m_collisionLayer->setVisible(false);
@@ -226,7 +262,6 @@ bool Control3::init()
 	listener->onTouchesEnded = CC_CALLBACK_2(Control3::onTouchesEnded, this);
 
 	Director::getInstance()->getEventDispatcher()->addEventListenerWithSceneGraphPriority(listener, this);
-
 	m_gameNode->setScale(1.5);
 
 	//setViewpoint(m_character->getPosition());
@@ -243,9 +278,8 @@ bool Control3::init()
 	this->addChild(bg, -50);
 
 	setViewpoint(m_character->getPosition());
+	showItems();
 	int index = m_resourceVector.size();
-
-	CCLOG("Size: %d", index);
 	this->scheduleUpdate();
 
     return true;
@@ -257,11 +291,11 @@ void Control3::walk(bool directionRight, Sprite* subject)
 	
 	if (directionRight) //right
 	{
-		subject->setFlipX(true);
+		subject->setFlippedX(true);
 	}
 	else //left
 	{
-		subject->setFlipX(false);
+		subject->setFlippedX(false);
 	}
 	
 	auto frame1 = RotateTo::create(0.1, -20);
@@ -375,12 +409,12 @@ void Control3::npcWalk(bool directionRight, cocos2d::Sprite * subject)
 
 	if (directionRight) //right
 	{
-		subject->setFlipX(true);
+		subject->setFlippedX(true);
 		subject->runAction(RepeatForever::create(moveRight));
 	}
 	else //left
 	{
-		subject->setFlipX(false);
+		subject->setFlippedX(false);
 		subject->runAction(RepeatForever::create(moveLeft));
 	}
 
@@ -393,35 +427,49 @@ void Control3::npcWalk(bool directionRight, cocos2d::Sprite * subject)
 void Control3::resourcePopup()
 {
 	bool created = false;
+
 	for (int i = 0; i < m_resourceVector.size(); ++i)
 	{
 		auto resource = m_resourceVector[i];
-		
-		if (m_character->getBoundingBox().intersectsRect(resource->getBoundingBox()))
+		if (resource != nullptr)
 		{
-			if (resource->getName() == "tree")
+			if (m_character->getBoundingBox().intersectsRect(resource->getBoundingBox()))
 			{
-				if (!m_isCreatedActionPopUp)
+				if (resource->getName() == "tree" || resource->getName() == "appletree")
 				{
-					auto popup = Sprite::create("img/ui/axe.png");
-					popup->setPosition(m_character->getPositionX(), m_character->getBoundingBox().getMaxY() + popup->getContentSize().height / 2);
-					popup->setName("actionPopup");
-					m_gameNode->addChild(popup);
-					m_isCreatedActionPopUp = true;
 					created = true;
+					if (!m_isCreatedActionPopUp)
+					{
+						m_actingResourceIndex = i;
+						resource->setColor(Color3B(200, 200, 200));
+						/*
+						auto popup = Sprite::create("img/ui/axe.png");
+						popup->setPosition(m_character->getPositionX(), m_character->getBoundingBox().getMaxY() + popup->getContentSize().height / 2);
+						popup->setName("actionPopup");
+						popup->setZOrder(2);
+						m_gameNode->addChild(popup);
+						*/
+						m_isCreatedActionPopUp = true;
+						m_isActing = true;
+						m_actingWithEnemy = false;
+					}
 				}
 			}
-		}
-		else
-		{
-			if (resource->getName() == "tree")
+			else
 			{
-				if (!created)
+				if (resource->getName() == "tree" || resource->getName() == "appletree")
 				{
-					if (m_isCreatedActionPopUp)
+					if (!created)
 					{
-						m_gameNode->removeChildByName("actionPopup");
-						m_isCreatedActionPopUp = false;
+						resource->setColor(Color3B(255, 255, 255));
+						m_actingResourceIndex = -1;
+						if (m_isCreatedActionPopUp)
+						{
+							//m_gameNode->removeChildByName("actionPopup");
+							m_isCreatedActionPopUp = false;
+							m_actingWithEnemy = false;
+							m_isActing = false;
+						}
 					}
 				}
 			}
@@ -464,6 +512,109 @@ void Control3::simplePhysics()
 	m_speedY += GRAVITY;
 	//-----------------------------
 
+	//-------------------------------------------------------
+	//------ACTIONS------------------------------------------
+	//-------------------------------------------------------
+
+	if (m_aButtonPressed)
+	{
+		if (m_isActing)
+		{
+			//it's a resource
+			if (!m_actingWithEnemy)
+			{
+				if (!m_actingInstanced)
+				{
+					if (m_resourceVector[m_actingResourceIndex])
+					{
+						auto endInstance = CallFunc::create([this]() {this->finishActionInstance(); });
+						if (m_actedResourceCount <= 5)
+						{
+							m_actingInstanced = true;
+							auto shake1 = RotateBy::create(0.05, 5);
+							auto shake2 = RotateBy::create(0.05, -10);
+							m_resourceVector[m_actingResourceIndex]->runAction(Sequence::create(shake1, shake2, shake1, endInstance, NULL));
+							m_actedResourceCount++;
+						}
+						else
+						{
+							m_actingInstanced = true;
+							auto shake1 = RotateBy::create(0.05, 10);
+							auto shake2 = RotateBy::create(0.05, -20);
+							auto fadeOut = FadeOut::create(0.1);
+							auto delay = DelayTime::create(0.1);
+							m_resourceVector[m_actingResourceIndex]->runAction(Sequence::create(shake1, shake2, shake1, fadeOut, delay, endInstance, NULL));
+							
+						}
+					}
+				}
+			}
+		}
+	}
+
+	//Collision with resources
+	for (int i = 0; i < m_resourceIconVector.size(); ++i)
+	{
+		auto resourceIcon = m_resourceIconVector[i];
+		if (m_character->getBoundingBox().intersectsRect(resourceIcon->getBoundingBox()))
+		{
+			resourceIcon->setVisible(false);
+			bool noSlot = true;
+			bool noSpace = false;
+			int firstVoidSlot = -1;
+			for (int j = 0; j < sizeof(m_inventorySlot) / sizeof(m_inventorySlot[0]); ++j)
+			{
+				//Put item in the same slot
+				if (resourceIcon->getTag() == m_inventorySlot[j].itemType)
+				{
+					m_inventorySlot[j].itemAmount++;
+					noSlot = false;
+				}
+				//Put item in new slot
+				else
+				{
+					//if void slot
+					if (m_inventorySlot[j].itemType == RESOURCE_NONE)
+					{
+						//firstVoidSlot = (firstVoidSlot == -1) ? i : firstVoidSlot;
+
+						//we havent get the first void slot yet
+						if (firstVoidSlot == -1)
+						{
+							//get the void slot
+							firstVoidSlot = j;
+						}
+						
+					}
+				}
+			}
+
+			if (noSlot)
+			{
+				if (firstVoidSlot != -1)
+				{
+					m_inventorySlot[firstVoidSlot].itemType = resourceIcon->getTag();
+					m_inventorySlot[firstVoidSlot].itemAmount++;
+				}
+				else
+				{
+					noSpace = true;
+				}
+			}
+
+			if (!noSpace)
+			{
+				m_gameNode->removeChild(resourceIcon);
+				m_resourceIconVector.erase(m_resourceIconVector.begin() + i);
+			}
+
+			CCLOG("amount in slot1: %d", m_inventorySlot[0].itemAmount);
+			CCLOG("amount in slot2: %d", m_inventorySlot[1].itemAmount);
+			CCLOG("amount in slot3: %d", m_inventorySlot[2].itemAmount);
+			showItems();
+		}
+	}
+
 	//Character Collision Check Points (x,y)
 	//
 	//	(MIN, MAX)		(MAX, MAX)
@@ -479,7 +630,6 @@ void Control3::simplePhysics()
 	//      -----------------
 	//		3				2
 	//	(MIN, MIN)		(MAX,MIN)
-
 
 	auto characterBB = m_character->getBoundingBox();
 	auto borderToToeDiff = (characterBB.getMaxX() - characterBB.getMidX()) / 1.5;
@@ -685,7 +835,6 @@ void Control3::simplePhysics()
 		}
 	}
 	
-
 	//-------------------------------
 	//---------Jumping---------------
 	//-------------------------------
@@ -798,6 +947,29 @@ void Control3::changeArea(bool right)
 		def->setBoolForKey("FromRight", false);
 	}
 	def->setIntegerForKey("MapArea", area);
+
+	def->setIntegerForKey("inventorySlotType01", m_inventorySlot[0].itemType);
+	def->setIntegerForKey("inventorySlotType02", m_inventorySlot[1].itemType);
+	def->setIntegerForKey("inventorySlotType03", m_inventorySlot[2].itemType);
+	def->setIntegerForKey("inventorySlotType04", m_inventorySlot[3].itemType);
+	def->setIntegerForKey("inventorySlotType05", m_inventorySlot[4].itemType);
+	def->setIntegerForKey("inventorySlotType06", m_inventorySlot[5].itemType);
+	def->setIntegerForKey("inventorySlotType07", m_inventorySlot[6].itemType);
+	def->setIntegerForKey("inventorySlotType08", m_inventorySlot[7].itemType);
+	def->setIntegerForKey("inventorySlotType09", m_inventorySlot[8].itemType);
+	def->setIntegerForKey("inventorySlotType10", m_inventorySlot[9].itemType);
+
+	def->setIntegerForKey("inventorySlotAmount01", m_inventorySlot[0].itemAmount);
+	def->setIntegerForKey("inventorySlotAmount02", m_inventorySlot[1].itemAmount);
+	def->setIntegerForKey("inventorySlotAmount03", m_inventorySlot[2].itemAmount);
+	def->setIntegerForKey("inventorySlotAmount04", m_inventorySlot[3].itemAmount);
+	def->setIntegerForKey("inventorySlotAmount05", m_inventorySlot[4].itemAmount);
+	def->setIntegerForKey("inventorySlotAmount06", m_inventorySlot[5].itemAmount);
+	def->setIntegerForKey("inventorySlotAmount07", m_inventorySlot[6].itemAmount);
+	def->setIntegerForKey("inventorySlotAmount08", m_inventorySlot[7].itemAmount);
+	def->setIntegerForKey("inventorySlotAmount09", m_inventorySlot[8].itemAmount);
+	def->setIntegerForKey("inventorySlotAmount10", m_inventorySlot[9].itemAmount);
+
 	def->flush();
 	auto resetScene = CallFunc::create([this]() {this->resetScene(); });
 	this->runAction(resetScene);
@@ -807,6 +979,133 @@ void Control3::resetScene()
 {
 	auto scene = Control3::createScene();
 	Director::getInstance()->replaceScene(scene);
+}
+
+void Control3::finishActionInstance()
+{
+	m_actingInstanced = false;
+	if (m_actedResourceCount > 5)
+	{
+		if (m_actingResourceIndex > -1)
+		{
+			spreadResource();
+			m_gameNode->removeChild(m_resourceVector[m_actingResourceIndex]);
+			m_resourceVector.erase(m_resourceVector.begin() + m_actingResourceIndex);
+			m_isActing = false;
+			
+		}
+		m_actedResourceCount = 0;
+	}
+}
+
+void Control3::spreadResource()
+{
+	float movingTime = 0.5f;
+
+	int resourceTypes[5];
+
+	auto name = m_resourceVector[m_actingResourceIndex]->getName();
+
+	for (auto& item : resourceData::resourceSpread)
+	{
+		if (item.name == name)
+		{
+			resourceTypes[0] = item.icon1;
+			resourceTypes[1] = item.icon2;
+			resourceTypes[2] = item.icon3;
+			resourceTypes[3] = item.icon4;
+			resourceTypes[4] = item.icon5;
+		}
+	}
+
+	Sprite* resIcon[5];
+	for (int i = 0; i < 5; ++i)
+	{
+		if (resourceTypes[i] != 0)
+		{
+			resIcon[i] = Sprite::create(resourceData::resourceIconPath[resourceTypes[i]]);
+			resIcon[i]->setPosition(m_resourceVector[m_actingResourceIndex]->getPosition());
+			resIcon[i]->setTag(resourceTypes[i]);
+			m_gameNode->addChild(resIcon[i]);
+			m_resourceIconVector.push_back(resIcon[i]);
+
+			auto xDistance = RandomHelper::random_int(-40, 40);
+			auto moveX = MoveBy::create(movingTime, Vec2(xDistance, 0));
+
+			auto yDistance = RandomHelper::random_int(0, 40);
+			auto moveY1 = MoveBy::create(movingTime / 2, Vec2(0, yDistance));
+			auto floor = m_resourceVector[m_actingResourceIndex]->getBoundingBox().getMinY();
+			auto topPointToFloor = resIcon[i]->getPositionY() + yDistance - floor - 20;
+			auto moveY2 = MoveBy::create(movingTime / 2, Vec2(0, abs(topPointToFloor) * -1));
+
+			auto sequence = Sequence::create(moveY1, moveY2, NULL);
+			auto spawn = Spawn::create(sequence, moveX, NULL);
+			resIcon[i]->runAction(spawn);
+		}
+	}
+}
+
+void Control3::showItems()
+{
+	Size visibleSize = Director::getInstance()->getVisibleSize();
+	int inventoryX = visibleSize.width/2 - 500 + 50;
+
+	for (int i = 0; i < 10; ++i)
+	{
+		if (m_inventorySlot[i].itemType != 0)
+		{
+			bool firstTime = true;
+			for (auto& itemInList : m_itemsVector)
+			{
+				if (itemInList->getTag() == m_inventorySlot[i].itemType)
+				{
+					firstTime = false;
+				}
+			}
+
+			if (firstTime)
+			{
+				auto sprite = Sprite::create(resourceData::resourceIconPath[m_inventorySlot[i].itemType]);
+				sprite->setPositionX(inventoryX + 100 * i);
+				sprite->setPositionY(m_inventoryY);
+				sprite->setTag(m_inventorySlot[i].itemType);
+				m_uiNode->addChild(sprite);
+				m_itemsVector.push_back(sprite);
+			}
+		}
+		
+	}
+
+	/*
+	int multiplyer = -1;
+	for (int i = 0; i < 10; ++i)
+	{
+		if (m_inventorySlot[i].itemType != 0)
+		{
+			bool isCreated = false;
+			for (auto& itemIn : m_itemsVector)
+			{
+				if (itemIn->getTag() == m_inventorySlot[i].itemType)
+				{
+					isCreated = true;
+				}
+			}
+			
+			if (!isCreated)
+			{
+				multiplyer++;
+				auto item = Sprite::create(resourceData::resourceIconPath[m_inventorySlot[i].itemType]);
+				item->setPositionX(inventoryX + 100 * multiplyer);
+				item->setPositionY(m_inventoryY);
+				item->setTag(m_inventorySlot[i].itemType);
+				m_itemsVector.push_back(item);
+				m_uiNode->addChild(item);
+				
+			}
+			
+		}
+	}
+	*/
 }
 
 void Control3::npcAI()
@@ -882,7 +1181,7 @@ void Control3::spawnNPC(int npcNumber)
 		m_npcVector.push_back(Sprite::create(npcTypePath[m_npcStateVector[i].npcType]));
 		m_npcVector[i]->setPositionY(m_character->getPositionY() - 5);
 		m_npcVector[i]->setPositionX(cocos2d::RandomHelper::random_int(0, 2800) + 1500);
-		m_npcVector[i]->setScale(0.212);
+		m_npcVector[i]->setScale(0.1272);
 		m_gameNode->addChild(m_npcVector[i]);
 	}
 }
@@ -920,6 +1219,12 @@ void Control3::onTouchesBegan(const std::vector<cocos2d::Touch*>& touch, cocos2d
 		if (touchPoint.intersectsRect(m_jButtonRect))
 		{
 			m_jButtonPressed = true;
+			m_jumpTouchID = t->getID();
+		}
+
+		if (touchPoint.intersectsRect(m_aButtonRect))
+		{
+			m_aButtonPressed = true;
 			m_actionTouchID = t->getID();
 		}
 
@@ -1066,10 +1371,15 @@ void Control3::onTouchesEnded(const std::vector<cocos2d::Touch*>& touch, cocos2d
 			m_standing = true;
 			m_moveTouchID = -1;
 		}
-		else if (t->getID() == m_actionTouchID)
+		if (t->getID() == m_jumpTouchID)
 		{
 			m_jButtonPressed = false;
 			m_jumpInstanced = false;
+			m_jumpTouchID = -1;
+		}
+		if (t->getID() == m_actionTouchID)
+		{
+			m_aButtonPressed = false;
 			m_actionTouchID = -1;
 		}
 	}
@@ -1080,4 +1390,3 @@ void Control3::menuCloseCallback(Ref* pSender)
 	auto scene = TitlleScene::createScene();
 	Director::getInstance()->replaceScene(scene);
 }
-

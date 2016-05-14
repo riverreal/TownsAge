@@ -25,6 +25,10 @@ public:
 
 	void changeArea(bool right);
 	void resetScene();
+	void finishActionInstance();
+	void spreadResource();
+
+	void showItems();
 
 	void npcAI();
 	void spawnNPC(int npcNumber);
@@ -42,6 +46,23 @@ public:
 
 private:
 	
+	struct PlayerInventory
+	{
+		PlayerInventory()
+			:itemType(0),
+			itemAmount(0)
+		{
+		}
+
+		PlayerInventory(int type, int amount)
+			:itemType(type),
+			itemAmount(amount)
+		{
+		}
+
+		int itemType;
+		int itemAmount;
+	};
 
 	struct NPCStates
 	{
@@ -52,7 +73,7 @@ private:
 			isBuilding(false),
 			isTalking(false),
 			stateDuration(1.0f),
-			npcType(NPC_TYPE_BEARD),
+			npcType(NPC_TYPE_GIRL1),
 			directionRight(false),
 			timeCounter(0),
 			firstTimeState(true),
@@ -93,6 +114,8 @@ private:
 	cocos2d::Sprite* m_character;
 	std::vector<cocos2d::Sprite*> m_npcVector;
 	std::vector<cocos2d::Sprite*> m_resourceVector;
+	std::vector<cocos2d::Sprite*> m_resourceIconVector;
+	std::vector<cocos2d::Sprite*> m_itemsVector;
 	std::vector<NPCStates> m_npcStateVector;
 	cocos2d::TMXTiledMap* m_tilemap;
 	cocos2d::TMXLayer* m_collisionLayer;
@@ -111,6 +134,7 @@ private:
 	cocos2d::Rect m_jButtonRect;
 	int m_moveTouchID;
 	int m_actionTouchID;
+	int m_jumpTouchID;
 
 	cocos2d::Node* m_gameNode;
 	cocos2d::Node* m_uiNode;
@@ -135,16 +159,24 @@ private:
 	const float GRAVITY = -0.2;
 	
 	//max speed for character
-	const float MAX_SPEED = 3;
+	const float MAX_SPEED = 4;
 
 	//max jump capacity
-	const float MAX_JUMP = 5;
+	const float MAX_JUMP = 6;
 
 	//player states
 	bool m_standing;
 	bool m_onGround;
 	bool m_jumpInstanced;
 	bool m_onNext;
+	bool m_isActing;
+	bool m_actingInstanced;
+	bool m_actingWithEnemy;
+	bool m_createdResourcePopup;
+	int m_actingResourceIndex;
+	int m_actedResourceCount;
+
+	float m_inventoryY;
 
 	//player variables
 	float m_speedX;
@@ -153,6 +185,7 @@ private:
 	float m_frictionX;
 	float m_jumpForce;
 
+	PlayerInventory m_inventorySlot[10];
 };
 
 #endif // __Control3_H__

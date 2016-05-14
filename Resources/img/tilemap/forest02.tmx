@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<map version="1.0" orientation="orthogonal" renderorder="right-up" width="200" height="41" tilewidth="32" tileheight="32" nextobjectid="24">
+ <tileset firstgid="1" name="Forest_sprite" tilewidth="32" tileheight="32" tilecount="128" columns="16">
+  <image source="Forest_sprite.png" width="512" height="256"/>
+ </tileset>
+ <layer name="タイル・レイヤー1" width="200" height="41">
+  <data encoding="base64" compression="zlib">
+   eJzt21sOgjAUBUB8LMkluP81KR9E01C9VbC2nUlOwocBTHpSKDBNAAAAAAAAAAAAAAB5h3uOSU5Vzwj+w9yNcyY6wugubwIj0w/I0w94ODxtp/fk7+J+hN6dk+3SQM/mMT5fNx0n/YDU0o9I9IPR6AfkRa6h9INRRecJ672MSD8gb+1dxLV+5J6BQM8+WdPN3X8sXfPckF5s2Y90vtETWrdXP6xv0YO9++F9rTLp/SB17d0P80nc2rdp1kXqij47j6zvlvx+q67MY+r0lFa9+m7z1bzc8n9uQc1+LGP7G73MT1vN4a0p/aZiLddgtjjWrxK5hijdz7f7ijwHqnWsX51HzXEgIiIiIiIiInVyAxzoMAI=
+  </data>
+ </layer>
+ <layer name="grass" width="200" height="41">
+  <data encoding="base64" compression="zlib">
+   eJzt1uEKgjAUBlAzn6A3SHv/Z8x+BGOkOXYX2M6BDxTFO6fXOQwAAAAAAAAAAAAAzBuB3u31gR4BAABqzNl2aQDom7UAAAAAAKBfSxJgmz4BoMYy+O8qYb44o8uacc21YY1P/ZD3i77pQ9Qz/tV7MyVpoXTseuW/vb7HZ3i+73Uj7Y/W60hPHgFpWatW6bXSc8eKcW/VjJjvNNNOIuvUiL7niNwPJsLtYIg1ZvvTl+MAAAAAZ/QEGSkbTw==
+  </data>
+ </layer>
+ <layer name="deco" width="200" height="41">
+  <data encoding="base64" compression="zlib">
+   eJzt3IsNgjAQAFCGYAHjBLoJxAX87D+DNkpsGqpCkAq+l1wOiJEacuVjS1UBAAAAAAAAAAAAsMkEcNdG0RRuC/yaJoq2cFsAAJYqd1/+KgAAAAAAAJbgGAX8uzbKIUJddGOvhjjf4nCLy3RNg5/QJrlJ8pjvgLXpu7Yaeh5RJ9AvHg+/pvrYPqKeYV/Gt61Xen0Wb2O83SPPUZ+UN+Vx3r3/yGh9/Xh3LilNrcC6TT2fYp9ZXpJP+r055pl8u/+tM8slhWfw3fP3OslVZj3dPuS31Em8O67xew8C87vhKf3vLayfyjUHAAAA/sIVOWwZKA==
+  </data>
+ </layer>
+ <layer name="col" width="200" height="41">
+  <data encoding="base64" compression="zlib">
+   eJzt2QlqhEAQQFGvJ3j/84RABGlSLm27Vb8HRTJhWmf7OjMZhjpj5Tp4wt2vV33wJfqAmD4gpg+I6QNi+oCYPiCmD4jpA2L6gJg+IKYPiOkDYj31MQYDkV76iFrQCGt66QNq6ANi+oBY1j7G4vejA7966aN2LX3L3kfN+UIfzLL3UXNdfTDThz6IZe5j73sqn8+JZO1ja986YI9e+/jvMpSy9rH3eyr//2BN5j5arZ0WQ1/0sb12+vubTvqjj+21cx/z6KMf+theW/ZRzpd7ueuc+NXPd5n7ODNL2ftY/rxqH1Nx+Svfi2Tt4ymt7t80XHtsL7d91b6ObLPs5g300Var57c83rYWbfOKPmq85XVSezvOvn/50pTH8rU5ev21mbXa3p5z0l372fL0c352Wnjz7Tu6rbseM/qhD4jpA2L6gJg+yOoHig+srw==
+  </data>
+ </layer>
+ <objectgroup name="player">
+  <object id="1" name="NextLeft" x="480" y="1090" width="30" height="28"/>
+  <object id="2" name="NextRight" x="5920" y="1087" width="34" height="32"/>
+ </objectgroup>
+ <objectgroup name="collectable">
+  <object id="3" name="tree" x="545" y="1029" width="102" height="94"/>
+  <object id="4" name="tree" x="822" y="1028" width="102" height="94"/>
+  <object id="5" name="tree" x="2365" y="1029" width="102" height="94"/>
+  <object id="6" name="tree" x="3052" y="1029" width="102" height="94"/>
+  <object id="7" name="tree" x="3340" y="1028" width="102" height="94"/>
+  <object id="8" name="tree" x="3930" y="1028" width="102" height="94"/>
+  <object id="9" name="tree" x="4283" y="1029" width="102" height="94"/>
+  <object id="10" name="tree" x="2632" y="1030" width="102" height="94"/>
+  <object id="11" name="tree" x="1075" y="1028" width="102" height="94"/>
+  <object id="12" name="tree" x="5002" y="1029" width="102" height="94"/>
+  <object id="13" name="tree" x="5132" y="1028" width="102" height="94"/>
+  <object id="14" name="tree" x="5580" y="1029" width="102" height="94"/>
+  <object id="15" name="tree" x="4493" y="901" width="102" height="94"/>
+  <object id="16" name="tree" x="1673" y="516" width="102" height="94"/>
+  <object id="17" name="tree" x="2060" y="901" width="102" height="94"/>
+  <object id="20" name="appletree" x="1484" y="357" width="102" height="94"/>
+  <object id="21" name="appletree" x="27" y="1028" width="102" height="94"/>
+  <object id="22" name="appletree" x="131" y="1028" width="102" height="94"/>
+  <object id="23" name="appletree" x="235" y="1028" width="102" height="94"/>
+ </objectgroup>
+</map>

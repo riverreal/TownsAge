@@ -76,6 +76,28 @@ bool TitlleScene::init()
 		def->setIntegerForKey(mapData::rightMap[i].c_str(), 1);
 	}
 
+	def->setIntegerForKey("inventorySlotType01", 0);
+	def->setIntegerForKey("inventorySlotType02", 0);
+	def->setIntegerForKey("inventorySlotType03", 0);
+	def->setIntegerForKey("inventorySlotType04", 0);
+	def->setIntegerForKey("inventorySlotType05", 0);
+	def->setIntegerForKey("inventorySlotType06", 0);
+	def->setIntegerForKey("inventorySlotType07", 0);
+	def->setIntegerForKey("inventorySlotType08", 0);
+	def->setIntegerForKey("inventorySlotType09", 0);
+	def->setIntegerForKey("inventorySlotType10", 0);
+
+	def->setIntegerForKey("inventorySlotAmount01", 0);
+	def->setIntegerForKey("inventorySlotAmount02", 0);
+	def->setIntegerForKey("inventorySlotAmount03", 0);
+	def->setIntegerForKey("inventorySlotAmount04", 0);
+	def->setIntegerForKey("inventorySlotAmount05", 0);
+	def->setIntegerForKey("inventorySlotAmount06", 0);
+	def->setIntegerForKey("inventorySlotAmount07", 0);
+	def->setIntegerForKey("inventorySlotAmount08", 0);
+	def->setIntegerForKey("inventorySlotAmount09", 0);
+	def->setIntegerForKey("inventorySlotAmount10", 0);
+
 	def->flush();
 
 	//auto control1 = MenuItemFont::create("Half Screen", CC_CALLBACK_1(TitlleScene::menuTransitionCallback, this, 0)); //index 0
