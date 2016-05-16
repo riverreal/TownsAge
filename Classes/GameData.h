@@ -145,8 +145,6 @@ namespace buildingData
 
 namespace resourceData
 {
-	
-
 	const std::string resourceIconPath[] =
 	{
 		"",
@@ -179,9 +177,7 @@ namespace resourceData
 	const spreadIcons resourceSpread[] =
 	{
 		spreadIcons("", RESOURCE_NONE, RESOURCE_NONE, RESOURCE_NONE, RESOURCE_NONE, RESOURCE_NONE),
-		spreadIcons("tree", WOOD, STONE, APPLE, RESOURCE_NONE, RESOURCE_NONE),
+		spreadIcons("tree", WOOD, STONE, APPLE, WOOD, RESOURCE_NONE),
 		spreadIcons("appletree", WOOD, WOOD, APPLE, RESOURCE_NONE, RESOURCE_NONE)
 	};
 }
-
-

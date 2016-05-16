@@ -116,6 +116,7 @@ private:
 	std::vector<cocos2d::Sprite*> m_resourceVector;
 	std::vector<cocos2d::Sprite*> m_resourceIconVector;
 	std::vector<cocos2d::Sprite*> m_itemsVector;
+	std::vector <cocos2d::Label*> m_itemCountVector;
 	std::vector<NPCStates> m_npcStateVector;
 	cocos2d::TMXTiledMap* m_tilemap;
 	cocos2d::TMXLayer* m_collisionLayer;

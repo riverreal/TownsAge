@@ -473,7 +473,13 @@ void Control3::resourcePopup()
 					}
 				}
 			}
+			
 		}
+	}
+
+	if (!m_isCreatedActionPopUp)
+	{
+		m_actedResourceCount = 0;
 	}
 	
 }
@@ -552,7 +558,7 @@ void Control3::simplePhysics()
 		}
 	}
 
-	//Collision with resources
+	//Collision with resource icons
 	for (int i = 0; i < m_resourceIconVector.size(); ++i)
 	{
 		auto resourceIcon = m_resourceIconVector[i];
@@ -1024,7 +1030,9 @@ void Control3::spreadResource()
 		if (resourceTypes[i] != 0)
 		{
 			resIcon[i] = Sprite::create(resourceData::resourceIconPath[resourceTypes[i]]);
+
 			resIcon[i]->setPosition(m_resourceVector[m_actingResourceIndex]->getPosition());
+
 			resIcon[i]->setTag(resourceTypes[i]);
 			m_gameNode->addChild(resIcon[i]);
 			m_resourceIconVector.push_back(resIcon[i]);
@@ -1055,11 +1063,25 @@ void Control3::showItems()
 		if (m_inventorySlot[i].itemType != 0)
 		{
 			bool firstTime = true;
-			for (auto& itemInList : m_itemsVector)
+			//for (int j = 0; j < m_itemsVector.size(); ++j)
 			{
-				if (itemInList->getTag() == m_inventorySlot[i].itemType)
+				
+				if (i < m_itemsVector.size())
 				{
-					firstTime = false;
+					auto itemInList = m_itemsVector[i];
+					if (itemInList->getTag() == m_inventorySlot[i].itemType)
+					{
+						firstTime = false;
+
+						std::ostringstream ostr;
+						ostr << m_inventorySlot[i].itemAmount;
+						auto newCounter = Label::createWithTTF(ostr.str(), "fonts/arial.ttf", 17);
+						newCounter->setPositionX(inventoryX + 100 * i + 17);
+						newCounter->setPositionY(m_inventoryY - 20);
+						m_uiNode->removeChild(m_itemCountVector[i]);
+						m_uiNode->addChild(newCounter);
+						m_itemCountVector[i] = newCounter;
+					}
 				}
 			}
 
@@ -1071,9 +1093,16 @@ void Control3::showItems()
 				sprite->setTag(m_inventorySlot[i].itemType);
 				m_uiNode->addChild(sprite);
 				m_itemsVector.push_back(sprite);
+
+				std::ostringstream ostr;
+				ostr << m_inventorySlot[i].itemAmount;
+				auto counter = Label::createWithTTF(ostr.str(), "fonts/arial.ttf", 17);
+				counter->setPositionX(sprite->getPositionX() + 17);
+				counter->setPositionY(sprite->getPositionY() - 20);
+				m_uiNode->addChild(counter);
+				m_itemCountVector.push_back(counter);
 			}
-		}
-		
+		}	
 	}
 
 	/*
