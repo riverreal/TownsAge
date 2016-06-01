@@ -1,5 +1,6 @@
 #include "ControlTesting03.h"
 #include "TitleScene.h"
+#include "DamageHandler.h"
 #include <sstream>
 
 USING_NS_CC;
@@ -32,6 +33,9 @@ bool Control3::init()
 	Size visibleSize = Director::getInstance()->getVisibleSize();
 	Vec2 origin = Director::getInstance()->getVisibleOrigin();
 
+
+	m_isTutorialHome = false;
+
 	//physics variable initialization
 	m_standing = true;
 	m_onGround = false;
@@ -41,7 +45,8 @@ bool Control3::init()
 	m_accelerationX = 0.1;
 	m_frictionX = 1;
 	m_jumpForce = 1.5;
-
+	m_damage = 10;
+	
 	//control init
 	m_aButtonPressed = false;
 	m_jButtonPressed = false;
@@ -59,6 +64,7 @@ bool Control3::init()
 	m_isActing = false;
 	m_actingWithEnemy = false;
 	m_actingInstanced = false;
+	m_swinging = false;
 
 	m_actedResourceCount = 0;
 
@@ -77,15 +83,48 @@ bool Control3::init()
 	{
 		if (def->getIntegerForKey(mapData::rightMap[area].c_str()) == mapData::FOREST01)
 		{
-			m_tilemap = TMXTiledMap::create("img/tilemap/forest02.tmx");
+			m_tilemap = TMXTiledMap::create("img/tilemap/forest01.tmx");
+		}
+		else if(def->getIntegerForKey(mapData::rightMap[area].c_str()) == mapData::MAP_TUTORIAL)
+		{
+			m_tilemap = TMXTiledMap::create("img/tilemap/tutorial.tmx");
+		}
+		else if (def->getIntegerForKey(mapData::rightMap[area].c_str()) == mapData::MAP_TUTORIAL2)
+		{
+			m_isTutorialHome = true;
+			m_tilemap = TMXTiledMap::create("img/tilemap/tutorial2.tmx");
+		}
+		else if (def->getIntegerForKey(mapData::rightMap[area].c_str()) == mapData::HOME_MAP)
+		{
+			m_tilemap = TMXTiledMap::create("img/tilemap/home.tmx");
+		}
+		else
+		{
+			m_tilemap = TMXTiledMap::create("img/tilemap/tutorial2.tmx");
 		}
 	}
 	//left map
 	else if (area < 0)
 	{
-		if (def->getIntegerForKey(mapData::leftMap[abs(area)].c_str()) == mapData::FOREST01)
+		if (def->getIntegerForKey(mapData::rightMap[area].c_str()) == mapData::FOREST01)
 		{
-			m_tilemap = TMXTiledMap::create("img/tilemap/forest02.tmx");
+			m_tilemap = TMXTiledMap::create("img/tilemap/forest01.tmx");
+		}
+		else if (def->getIntegerForKey(mapData::rightMap[area].c_str()) == mapData::MAP_TUTORIAL)
+		{
+			m_tilemap = TMXTiledMap::create("img/tilemap/tutorial.tmx");
+		}
+		else if (def->getIntegerForKey(mapData::rightMap[area].c_str()) == mapData::MAP_TUTORIAL2)
+		{
+			m_tilemap = TMXTiledMap::create("img/tilemap/tutorial2.tmx");
+		}
+		else if (def->getIntegerForKey(mapData::rightMap[area].c_str()) == mapData::HOME_MAP)
+		{
+			m_tilemap = TMXTiledMap::create("img/tilemap/home.tmx");
+		}
+		else
+		{
+			m_tilemap = TMXTiledMap::create("img/tilemap/tutorial.tmx");
 		}
 	}
 	//home map
@@ -104,24 +143,24 @@ bool Control3::init()
 	float rightArrowX = comeFrom["x"].asInt();
 	float rightArrowY = comeFrom["y"].asInt();
 
-	/*
-	if (area == mapData::HOME_MAP)
+	ValueMap spawnBox = objectGroup->getObject("Spawn");
+	if (spawnBox["x"].asInt() != 0)
 	{
-		auto playerSpawnPoint = objectGroup->getObject("playerPoint");
-		playerX = playerSpawnPoint["x"].asInt();
-		playerY = playerSpawnPoint["y"].asInt();
-	}
-	*/
-	
-	if (fromRight)
-	{
-		playerX = leftArrowX + 52;
-		playerY = leftArrowY;
+		playerX = spawnBox["x"].asInt();
+		playerY = spawnBox["y"].asInt();
 	}
 	else
 	{
-		playerX = rightArrowX - 52;
-		playerY = rightArrowY;
+		if (fromRight)
+		{
+			playerX = leftArrowX + 52;
+			playerY = leftArrowY;
+		}
+		else
+		{
+			playerX = rightArrowX - 52;
+			playerY = rightArrowY;
+		}
 	}
 
 	auto collectableGroup = m_tilemap->getObjectGroup("collectable");
@@ -150,6 +189,8 @@ bool Control3::init()
 			}
 		}
 	}
+
+	
 
 	auto leftArrow = Sprite::create("img/ui/red-arrow.png");
 	leftArrow->setRotation(-90);
@@ -192,11 +233,13 @@ bool Control3::init()
 	m_inventorySlot[8].itemAmount = def->getIntegerForKey("inventorySlotAmount09");
 	m_inventorySlot[9].itemAmount = def->getIntegerForKey("inventorySlotAmount10");
 
+	m_hp = def->getIntegerForKey("hp");
+
 	m_collisionLayer = m_tilemap->getLayer("col");
 	m_collisionLayer->setVisible(false);
 
-	m_character = Sprite::create("img/sprites/characterBoxed.png");
-	m_character->setScale(0.128);
+	m_character = Sprite::create("img/sprites/player/idle1.png");
+	m_character->setScale(1.024);
 	m_character->setZOrder(20);
 	if (def->getBoolForKey("FromRight"))
 	{
@@ -205,6 +248,12 @@ bool Control3::init()
 
 	m_character->setPosition(playerX + m_tilemap->getTileSize().width, playerY + m_tilemap->getTileSize().height);
 	m_gameNode->addChild(m_character);
+
+	playerAnimationCache();
+	equipmentCache();
+
+	m_character->runAction(RepeatForever::create(Animate::create(m_playerAnimCache->getAnimation("idle"))));
+
 	if (area == mapData::HOME_MAP)
 	{
 		//spawn 4 npcs
@@ -225,16 +274,16 @@ bool Control3::init()
 	rightButton->setOpacity(100);
 	m_uiNode->addChild(rightButton);
 
-	auto jButton = Sprite::create("img/ui/j-button.png");
+	auto jButton = Sprite::create("img/ui/Jump.png");
 	jButton->setPosition(visibleSize.width / 10 * 7.3, visibleSize.height / 6);
 	jButton->setOpacity(100);
-	jButton->setScale(0.7);
+	jButton->setScale(0.35);
 	m_uiNode->addChild(jButton);
 
-	auto aButton = Sprite::create("img/ui/a-button.png");
+	auto aButton = Sprite::create("img/ui/Attack.png");
 	aButton->setPosition(visibleSize.width / 10 * 9, visibleSize.height / 4);
 	aButton->setOpacity(100);
-	aButton->setScale(0.7);
+	aButton->setScale(0.35);
 	m_uiNode->addChild(aButton);
 
 	// add a "close" icon to exit the progress. it's an autorelease object
@@ -245,6 +294,7 @@ bool Control3::init()
 	//closeItem->setScale(3);
 	closeItem->setPosition(Vec2(origin.x + visibleSize.width - closeItem->getBoundingBox().getMaxX(),
 		origin.y + closeItem->getBoundingBox().getMaxY()));
+	closeItem->setVisible(false);
 
 	// create menu, it's an autorelease object
 	auto menu = Menu::create(closeItem, NULL);
@@ -264,7 +314,6 @@ bool Control3::init()
 	Director::getInstance()->getEventDispatcher()->addEventListenerWithSceneGraphPriority(listener, this);
 	m_gameNode->setScale(1.5);
 
-	//setViewpoint(m_character->getPosition());
 	m_gameNode->setPosition(Vec2::ZERO);
 	m_uiNode->setPosition(Vec2::ZERO);
 	this->addChild(m_gameNode);
@@ -277,17 +326,61 @@ bool Control3::init()
 	auto bg = LayerGradient::create(Color4B(34, 98, 206, 255), Color4B(173, 240, 245, 255), Vec2(0, -1));
 	this->addChild(bg, -50);
 
+	auto enemyGroup = m_tilemap->getObjectGroup("enemy");
+	if (enemyGroup)
+	{
+		auto enemyVector = enemyGroup->getObjects();
+		for (auto& enemy : enemyVector)
+		{
+			auto position = Vec2(enemy.asValueMap()["x"].asFloat(), enemy.asValueMap()["y"].asFloat());
+			m_enemy.SetStaticEnemy(enemy.asValueMap()["name"].asString(), position, enemy.asValueMap()["range"].asFloat());
+		}
+	}
+
+	m_enemy.InitEnemies(m_gameNode);
+
 	setViewpoint(m_character->getPosition());
+	m_hpBar = Sprite::create("img/ui/hpBar.png");
+	m_hpBar->setAnchorPoint(Vec2(0.0f, 0.5f));
+	m_hpBar->setPosition(inventoryFrame->getBoundingBox().getMinX(), m_inventoryY - 60);
+	updateHPBar();
+	m_uiNode->addChild(m_hpBar);
+
 	showItems();
 	int index = m_resourceVector.size();
 	this->scheduleUpdate();
+
+	auto fadeIn = FadeIn::create(0.6f);
+	auto ui = (Sprite*)m_uiNode;
+	ui->setCascadeOpacityEnabled(true);
+	ui->setOpacity(0);
+	ui->runAction(fadeIn);
+
+	if (m_isTutorialHome)
+	{
+		//Spawn 1 npc
+
+		//Create a default state first
+		NPCStates randomState;
+		int maxType = NPC_TYPE_PREHISTORIC_MAX - 1;
+		int maxBuilding = buildingData::MAX_PREHISTORIC - 1;
+		randomState.npcType = cocos2d::RandomHelper::random_int(0, maxType);
+		randomState.buildingNum1 = buildingData::HOUSE;
+		//WARNING: npcStateVector and npcVector has to share the same index!
+		m_npcStateVector.push_back(randomState);
+		m_npcVector.push_back(Sprite::create(npcTypePath[m_npcStateVector[0].npcType]));
+		m_npcVector[0]->setPositionY(m_character->getPositionY() - 15);
+		m_npcVector[0]->setPositionX(cocos2d::RandomHelper::random_int(0, 1500) + 500);
+		m_npcVector[0]->setScale(0.1272);
+		m_gameNode->addChild(m_npcVector[0]);
+	}
 
     return true;
 }
 
 void Control3::walk(bool directionRight, Sprite* subject)
 {
-	subject->stopAllActions();
+	resetPlayerActions();
 	
 	if (directionRight) //right
 	{
@@ -298,10 +391,15 @@ void Control3::walk(bool directionRight, Sprite* subject)
 		subject->setFlippedX(false);
 	}
 	
+	
 	auto frame1 = RotateTo::create(0.1, -20);
 	auto frame2 = RotateTo::create(0.1, 20);
 	auto sequence = Sequence::create(frame1, frame2, NULL);
 	//subject->runAction(RepeatForever::create(sequence));
+	/*
+	auto walkingAnim = Animate::create(m_playerAnimCache->getAnimation("walking"));
+	subject->runAction(RepeatForever::create(walkingAnim));
+	*/
 }
 
 void Control3::popUp(cocos2d::Sprite * subject)
@@ -320,7 +418,7 @@ void Control3::popUp(cocos2d::Sprite * subject)
 			auto house = Sprite::create(buildingData::buildingPath[m_npcStateVector[m_talkingNPCIndex].buildingNum1]);
 			house->setPosition(subject->getPositionX(), subject->getPositionY() + 3);
 			house->setName(HOUSE_ICON_SPRITE);
-			house->setScale(1.2);
+			house->setScale(0.7);
 			house->setOpacity(0);
 
 			m_gameNode->addChild(popup);
@@ -442,13 +540,6 @@ void Control3::resourcePopup()
 					{
 						m_actingResourceIndex = i;
 						resource->setColor(Color3B(200, 200, 200));
-						/*
-						auto popup = Sprite::create("img/ui/axe.png");
-						popup->setPosition(m_character->getPositionX(), m_character->getBoundingBox().getMaxY() + popup->getContentSize().height / 2);
-						popup->setName("actionPopup");
-						popup->setZOrder(2);
-						m_gameNode->addChild(popup);
-						*/
 						m_isCreatedActionPopUp = true;
 						m_isActing = true;
 						m_actingWithEnemy = false;
@@ -473,7 +564,6 @@ void Control3::resourcePopup()
 					}
 				}
 			}
-			
 		}
 	}
 
@@ -514,6 +604,8 @@ Vec2 Control3::convertToTilePosition(Vec2 position)
 
 void Control3::simplePhysics()
 {
+	auto swingTime = 0.34f;
+
 	//----Gracity for character----
 	m_speedY += GRAVITY;
 	//-----------------------------
@@ -521,6 +613,9 @@ void Control3::simplePhysics()
 	//-------------------------------------------------------
 	//------ACTIONS------------------------------------------
 	//-------------------------------------------------------
+
+	//DMGHandler Player recieves dmg if dmg was dealt
+	m_actingWithEnemy = m_enemy.updateEnemies(m_character->getBoundingBox());
 
 	if (m_aButtonPressed)
 	{
@@ -534,12 +629,19 @@ void Control3::simplePhysics()
 					if (m_resourceVector[m_actingResourceIndex])
 					{
 						auto endInstance = CallFunc::create([this]() {this->finishActionInstance(); });
+						CallFunc* swingPlayer = CallFunc::create([this]() {this->swingPlayer(SWING_AXE); });;
+						if (m_resourceVector[m_actingResourceIndex]->getName() == "tree" || m_resourceVector[m_actingResourceIndex]->getName() == "appletree")
+						{
+							swingPlayer = CallFunc::create([this]() {this->swingPlayer(SWING_AXE); });
+						}
+
+						auto swingDelay = DelayTime::create(swingTime);
 						if (m_actedResourceCount <= 5)
 						{
 							m_actingInstanced = true;
 							auto shake1 = RotateBy::create(0.05, 5);
 							auto shake2 = RotateBy::create(0.05, -10);
-							m_resourceVector[m_actingResourceIndex]->runAction(Sequence::create(shake1, shake2, shake1, endInstance, NULL));
+							m_resourceVector[m_actingResourceIndex]->runAction(Sequence::create(shake1, shake2, shake1, swingPlayer, swingDelay, endInstance, NULL));
 							m_actedResourceCount++;
 						}
 						else
@@ -549,14 +651,54 @@ void Control3::simplePhysics()
 							auto shake2 = RotateBy::create(0.05, -20);
 							auto fadeOut = FadeOut::create(0.1);
 							auto delay = DelayTime::create(0.1);
-							m_resourceVector[m_actingResourceIndex]->runAction(Sequence::create(shake1, shake2, shake1, fadeOut, delay, endInstance, NULL));
-							
+							m_resourceVector[m_actingResourceIndex]->runAction(Sequence::create(shake1, shake2, shake1, fadeOut, delay, swingPlayer, swingDelay, endInstance, NULL));
 						}
 					}
 				}
 			}
+			//if acting with enemy
+			else
+			{
+				/*
+				if (!m_actingInstanced)
+				{
+					m_actingInstanced = true;
+					auto endInstance = CallFunc::create([this]() {this->finishActionInstance(); });
+					auto swingPlayer = CallFunc::create([this]() {this->swingPlayer(SWING_SWORD); });
+					auto swingDelay = DelayTime::create(swingTime);
+					m_gameNode->runAction(Sequence::create(swingPlayer, swingDelay, endInstance, NULL));
+				}
+				*/
+			}
+		}
+
+		if (!m_actingInstanced)
+		{
+			m_actingInstanced = true;
+			auto endInstance = CallFunc::create([this]() {this->finishActionInstance(); });
+			auto swingPlayer = CallFunc::create([this]() {this->swingPlayer(SWING_SWORD); });
+			auto swingDelay = DelayTime::create(swingTime);
+			auto preSwingDelay = DelayTime::create(swingTime/2);
+			m_gameNode->runAction(Sequence::create(preSwingDelay, swingPlayer, swingDelay, endInstance, NULL));
 		}
 	}
+
+	if (!m_animationInstanced)
+	{
+		if (m_standing)
+		{
+			m_animationInstanced = true;
+			resetPlayerActions();
+			m_character->runAction(RepeatForever::create(Animate::create(m_playerAnimCache->getAnimation("idle"))));
+		}
+		else
+		{
+			m_animationInstanced = true;
+			auto walkingAnim = Animate::create(m_playerAnimCache->getAnimation("walking"));
+			m_character->runAction(RepeatForever::create(walkingAnim));
+		}
+	}
+	
 
 	//Collision with resource icons
 	for (int i = 0; i < m_resourceIconVector.size(); ++i)
@@ -687,13 +829,13 @@ void Control3::simplePhysics()
 					{
 						m_speedX = 0;
 						nulled = true;
-						/*
+						
 						auto correctionDelta = rightCheckPoints[0].x - rightTile->getBoundingBox().getMinX();
 						if (correctionDelta > 0 && correctionDelta < 20)
 						{
 							m_character->setPositionX(m_character->getPositionX() - correctionDelta);
 						}
-						*/
+						
 					}
 				}
 				else
@@ -712,10 +854,7 @@ void Control3::simplePhysics()
 			{
 				//correction
 				m_speedX = 0;
-
 			}
-			
-			
 		}
 		//LEFT Collision detection
 		else
@@ -730,13 +869,13 @@ void Control3::simplePhysics()
 					if (m_character->getBoundingBox().intersectsRect(leftTile->getBoundingBox()))
 					{
 						m_speedX = 0;
-						/*
+						
 						auto correctionDelta = leftTile->getBoundingBox().getMaxX() - leftCheckPoints[0].x;
 						if ( correctionDelta > 0 && correctionDelta < 20)
 						{
 							m_character->setPositionX(m_character->getPositionX() + correctionDelta);
 						}
-						*/
+						
 						nulled = true;
 					}
 				}
@@ -763,7 +902,6 @@ void Control3::simplePhysics()
 	else
 	{
 		//Add Frinction to stop player
-
 		if (m_speedX > 0)
 		{
 			//friction only when not moving
@@ -916,6 +1054,37 @@ void Control3::simplePhysics()
 	m_character->setPositionX(m_character->getPositionX() + m_speedX);
 }
 
+void Control3::playerAnimationCache()
+{
+	auto walking = Animation::create();
+	walking->addSpriteFrameWithFileName("img/sprites/player/walk1.png");
+	walking->addSpriteFrameWithFileName("img/sprites/player/walk2.png");
+	walking->addSpriteFrameWithFileName("img/sprites/player/walk3.png");
+	walking->addSpriteFrameWithFileName("img/sprites/player/walk4.png");
+	walking->setLoops(1);
+	walking->setDelayPerUnit(0.1);
+
+	auto idle = Animation::create();
+	idle->addSpriteFrameWithFileName("img/sprites/player/idle1.png");
+	idle->addSpriteFrameWithFileName("img/sprites/player/idle2.png");
+	idle->addSpriteFrameWithFileName("img/sprites/player/idle3.png");
+	idle->setLoops(1);
+	idle->setDelayPerUnit(0.2);
+
+	auto swing = Animation::create();
+	swing->addSpriteFrameWithFileName("img/sprites/player/swing2.png");
+	swing->addSpriteFrameWithFileName("img/sprites/player/swing1.png");
+	swing->addSpriteFrameWithFileName("img/sprites/player/swing3.png");
+	swing->addSpriteFrameWithFileName("img/sprites/player/swing4.png");
+	swing->setLoops(1);
+	swing->setDelayPerUnit(0.085);
+
+	m_playerAnimCache = AnimationCache::getInstance();
+	m_playerAnimCache->addAnimation(walking, "walking");
+	m_playerAnimCache->addAnimation(idle, "idle");
+	m_playerAnimCache->addAnimation(swing, "swing");
+}
+
 void Control3::changeArea(bool right)
 {
 	m_onNext = true;
@@ -976,6 +1145,8 @@ void Control3::changeArea(bool right)
 	def->setIntegerForKey("inventorySlotAmount09", m_inventorySlot[8].itemAmount);
 	def->setIntegerForKey("inventorySlotAmount10", m_inventorySlot[9].itemAmount);
 
+	def->setIntegerForKey("hp", m_hp);
+
 	def->flush();
 	auto resetScene = CallFunc::create([this]() {this->resetScene(); });
 	this->runAction(resetScene);
@@ -989,19 +1160,30 @@ void Control3::resetScene()
 
 void Control3::finishActionInstance()
 {
+	resetPlayerActions();
+	//m_character->runAction(RepeatForever::create(Animate::create(m_playerAnimCache->getAnimation("idle"))));
 	m_actingInstanced = false;
-	if (m_actedResourceCount > 5)
+	if (!m_actingWithEnemy)
 	{
-		if (m_actingResourceIndex > -1)
+		if (m_actedResourceCount > 5)
 		{
-			spreadResource();
-			m_gameNode->removeChild(m_resourceVector[m_actingResourceIndex]);
-			m_resourceVector.erase(m_resourceVector.begin() + m_actingResourceIndex);
-			m_isActing = false;
-			
+			if (m_actingResourceIndex > -1)
+			{
+				spreadResource();
+				m_gameNode->removeChild(m_resourceVector[m_actingResourceIndex]);
+				m_resourceVector.erase(m_resourceVector.begin() + m_actingResourceIndex);
+				m_isActing = false;
+			}
+			m_actedResourceCount = 0;
 		}
-		m_actedResourceCount = 0;
 	}
+	else
+	{	
+		
+	}
+	m_swinging = false;
+	m_animationInstanced = false;
+	m_attackOnce = false;
 }
 
 void Control3::spreadResource()
@@ -1053,6 +1235,50 @@ void Control3::spreadResource()
 	}
 }
 
+void Control3::swingPlayer(int swingType)
+{
+	if (!m_swinging)
+	{
+		auto xMagnitude = 23;
+		auto duration = 0.34f;
+		resetPlayerActions();
+		m_character->runAction(RepeatForever::create(Animate::create(m_playerAnimCache->getAnimation("swing"))));
+		m_swinging = true;
+		//Object to swing Initialization
+		Sprite* toSwing = (Sprite*)m_gameNode->getChildByName("axe");
+		switch (swingType)
+		{
+		case SWING_AXE:
+			toSwing = (Sprite*)m_gameNode->getChildByName("axe");
+			break;
+		case SWING_SWORD:
+			toSwing = (Sprite*)m_gameNode->getChildByName("sword");
+			break;
+		case SWING_PICK:
+			toSwing = (Sprite*)m_gameNode->getChildByName("axe");
+			break;
+		default:
+			toSwing = (Sprite*)m_gameNode->getChildByName("axe");
+			break;
+		};
+		toSwing->setVisible(true);
+		auto side = !m_character->isFlippedX();
+		toSwing->setFlippedX(!side);
+		auto intSide = side ? -1 : 1;
+		toSwing->setRotation(20 * -intSide);
+		toSwing->setPosition(m_character->getPositionX() + xMagnitude * intSide, m_character->getPositionY() + 39);
+
+		//Object to swing animation
+		auto moveX = Sequence::create(MoveBy::create(duration * 0.5f, Vec2(10 * intSide, 0)), MoveBy::create(duration*0.5f, Vec2(10 * -intSide, 0)), NULL);
+		auto moveY = MoveBy::create(duration, Vec2(0, -71));
+		auto rotate = RotateBy::create(duration, intSide * 100);
+		auto func = CallFunc::create([toSwing]() {toSwing->setVisible(false); });
+		auto fadeOut = Sequence::create(DelayTime::create(0.32f), func, NULL);
+		auto spawn = Spawn::create(moveY, rotate, fadeOut, NULL);
+		toSwing->runAction(spawn);
+	}
+}
+
 void Control3::showItems()
 {
 	Size visibleSize = Director::getInstance()->getVisibleSize();
@@ -1065,7 +1291,6 @@ void Control3::showItems()
 			bool firstTime = true;
 			//for (int j = 0; j < m_itemsVector.size(); ++j)
 			{
-				
 				if (i < m_itemsVector.size())
 				{
 					auto itemInList = m_itemsVector[i];
@@ -1104,37 +1329,29 @@ void Control3::showItems()
 			}
 		}	
 	}
+}
 
-	/*
-	int multiplyer = -1;
-	for (int i = 0; i < 10; ++i)
-	{
-		if (m_inventorySlot[i].itemType != 0)
-		{
-			bool isCreated = false;
-			for (auto& itemIn : m_itemsVector)
-			{
-				if (itemIn->getTag() == m_inventorySlot[i].itemType)
-				{
-					isCreated = true;
-				}
-			}
-			
-			if (!isCreated)
-			{
-				multiplyer++;
-				auto item = Sprite::create(resourceData::resourceIconPath[m_inventorySlot[i].itemType]);
-				item->setPositionX(inventoryX + 100 * multiplyer);
-				item->setPositionY(m_inventoryY);
-				item->setTag(m_inventorySlot[i].itemType);
-				m_itemsVector.push_back(item);
-				m_uiNode->addChild(item);
-				
-			}
-			
-		}
-	}
-	*/
+void Control3::updateHPBar()
+{
+	auto maxHP = 1000.0f;
+	float hp = m_hp;
+	float hpForScale = (hp / maxHP);
+	m_hpBar->setScaleX(hpForScale);
+}
+
+void Control3::equipmentCache()
+{
+	auto axe = Sprite::create("img/ui/axe.png");
+	axe->setFlippedX(true);
+	axe->setVisible(false);
+	axe->setName("axe");
+	m_gameNode->addChild(axe);
+
+	auto sword = Sprite::create("img/ui/sword.png");
+	sword->setFlippedX(true);
+	sword->setVisible(false);
+	sword->setName("sword");
+	m_gameNode->addChild(sword);
 }
 
 void Control3::npcAI()
@@ -1215,12 +1432,63 @@ void Control3::spawnNPC(int npcNumber)
 	}
 }
 
+void Control3::receivePlayerDamage()
+{
+	auto damage = DamageHandler::GetInstance();
+	m_hp -= damage->GetPlayerDamage();
+	if (damage->GetPlayerDamage() != 0)
+	{
+		auto direction = 1;
+		if (m_character->isFlippedX())
+		{
+			direction = -1;
+		}
+
+		//knock back
+		m_speedX += 10 * direction;
+		auto tintRed = TintTo::create(0.05, Color3B::RED);
+		auto delay = DelayTime::create(0.1);
+		auto tintBack = TintTo::create(0.05, Color3B::WHITE);
+		m_character->runAction(Sequence::create(tintRed, delay, tintBack, NULL));
+		CCLOG("knock back!");
+	}
+}
+
+void Control3::resetPlayerActions()
+{
+	m_character->stopAllActions();
+	m_character->setColor(Color3B::WHITE);
+	m_character->setRotation(0);
+}
+
 void Control3::update(float dt)
 {
+	auto damage = DamageHandler::GetInstance();
+	damage->ResetDamage();
 	setViewpoint(m_character->getPosition());
+	resourcePopup();
 	simplePhysics();
 	npcAI();
-	resourcePopup();
+
+	auto sword = (Sprite*)m_gameNode->getChildByName("sword");
+	sword->setPosition(m_character->getPosition());
+	if (m_actingInstanced)
+	{
+		if (m_enemy.collideWith(sword->getBoundingBox()) && sword->isVisible() && !m_attackOnce)
+		{
+			auto damage = DamageHandler::GetInstance();
+			damage->DealDamageToMonster(m_damage);
+			m_attackOnce = true;
+		}
+	}
+	
+
+	//dmg calc
+	//CCLOG("Monster damage: %i", damage->GetMonsterDamage());
+	m_enemy.receiveDamage(false);
+	receivePlayerDamage();
+
+	updateHPBar();
 }
 
 void Control3::onTouchesBegan(const std::vector<cocos2d::Touch*>& touch, cocos2d::Event* eventt)
@@ -1232,17 +1500,25 @@ void Control3::onTouchesBegan(const std::vector<cocos2d::Touch*>& touch, cocos2d
 		Rect touchPoint = Rect(t->getLocation().x, t->getLocation().y, 1, 1);
 		if (touchPoint.intersectsRect(m_rightRect))
 		{
-			walk(true, m_character);
-			m_directionRight = true;
-			m_standing = false;
-			m_moveTouchID = t->getID();
+			//if (!m_swinging)
+			{
+				walk(true, m_character);
+				m_directionRight = true;
+				m_standing = false;
+				m_animationInstanced = false;
+				m_moveTouchID = t->getID();
+			}
 		}
 		else if (touchPoint.intersectsRect(m_leftRect))
 		{
-			walk(false, m_character);
-			m_directionRight = false;
-			m_standing = false;
-			m_moveTouchID = t->getID();
+			//if (!m_swinging)
+			{
+				walk(false, m_character);
+				m_directionRight = false;
+				m_standing = false;
+				m_animationInstanced = false;
+				m_moveTouchID = t->getID();
+			}
 		}
 
 		if (touchPoint.intersectsRect(m_jButtonRect))
@@ -1370,20 +1646,28 @@ void Control3::onTouchesMoved(const std::vector<cocos2d::Touch*>& touch, cocos2d
 		{
 			if(!m_directionRight)
 			{
-				walk(true, m_character);
-				m_directionRight = true;
-				m_standing = false;
-				m_moveTouchID = t->getID();
+				//if (!m_swinging)
+				{
+					walk(true, m_character);
+					m_directionRight = true;
+					m_standing = false;
+					m_animationInstanced = false;
+					m_moveTouchID = t->getID();
+				}
 			}
 		}
 		else if (touchPoint.intersectsRect(m_leftRect))
 		{
 			if (m_directionRight)
 			{
-				walk(false, m_character);
-				m_directionRight = false;
-				m_standing = false;
-				m_moveTouchID = t->getID();
+				//if (!m_swinging)
+				{
+					walk(false, m_character);
+					m_directionRight = false;
+					m_standing = false;
+					m_animationInstanced = false;
+					m_moveTouchID = t->getID();
+				}
 			}
 		}
 	}
@@ -1395,9 +1679,8 @@ void Control3::onTouchesEnded(const std::vector<cocos2d::Touch*>& touch, cocos2d
 	{
 		if (t->getID() == m_moveTouchID)
 		{
-			m_character->stopAllActions();
-			m_character->setRotation(0);
 			m_standing = true;
+			m_animationInstanced = false;
 			m_moveTouchID = -1;
 		}
 		if (t->getID() == m_jumpTouchID)

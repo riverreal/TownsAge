@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<map version="1.0" orientation="orthogonal" renderorder="right-up" width="200" height="41" tilewidth="32" tileheight="32" nextobjectid="38">
+ <tileset firstgid="1" name="Forest_sprite" tilewidth="32" tileheight="32" tilecount="128" columns="16">
+  <image source="Forest_sprite.png" width="512" height="256"/>
+ </tileset>
+ <layer name="タイル・レイヤー 1" width="200" height="41">
+  <data encoding="base64" compression="zlib">
+   eJzt2FsKgzAQQFHbugLp/teq/SgtPlBpYJzpOXC/DZFkxK4DAAAAAAAAAAAAAAAAAAAAAAAAyOsZvQC4oNvUfeoRvRC4mNfZ6L8CPjOjn2WOwPJczCOH9z13tKFhZ56brb3zEb2+X/qn+bf3HqW1qtv6PpaOVF30/ip3VZkbalFV0fuqGp39r5Ol6H2VJEmSJElSm0ayhiBN
+  </data>
+ </layer>
+ <layer name="grass2" width="200" height="41">
+  <data encoding="base64" compression="zlib">
+   eJzt1esJgzAUBlCH6ALFCbQTtCN0hTqB7g9NwUIIJg2CCOk58BHMg3slP9J1AAAAAAAAAAAAAAAAAAAAAAAAAEBrnmc3AACc6holZ1zHOWTJ7LltzN1DHtH3JVkfKmrX2KqdSmvHPXyMmfXS2b29v0KmHed+Kd3P15CZL/0/8L/6NQBQw7sBcKy+0QAAAAAAtO4NjXIOBw==
+  </data>
+ </layer>
+ <layer name="grass" width="200" height="41">
+  <data encoding="base64" compression="zlib">
+   eJzt17ENgCAQBVBWMU6kcQHR/WdQEgo1WliB+F7yKwo+xeVCCAAAAAAAAAAAAAAAAAAAAAAAAADf0+cAZ8e5GIu1gLo87Qy7BGhF/zIl764ty54pZ72ctf52/iPuGYL/AdxJc5HmI5YuApWaSxcAgB/oGg0AAAAAQOs2L2obRQ==
+  </data>
+ </layer>
+ <layer name="col" width="200" height="41">
+  <data encoding="base64" compression="zlib">
+   eJzt2EEKwzAMRcFcz/e/UFeFLPoDcWklhRnw0mCCXgw+jvvWxh6o9M+Z1QfT6AMyfUCmD8j0AZk+INMHZPqATB+Q6QMyfUCmD8j0AZk+INMHZPqATB+Q6QMyfUCmD8j0AZk+INMHZPqATB9UW6fVjT6odO6i43zogwqf7oyO94g+qHA1C53mRB/XlvWz9eRvvmN3X6WJZ2amSbP27b8A7po0a5POyjNMmDn3BlUmzNyEM9Jf9ftAt7cHeDNDAAAA0MML9GlPkA==
+  </data>
+ </layer>
+ <objectgroup name="player">
+  <object id="2" name="NextRight" x="5918" y="896" width="34" height="32"/>
+  <object id="34" name="Spawn" x="733.333" y="1048.48" width="69.697" height="57.5758"/>
+ </objectgroup>
+ <objectgroup name="collectable">
+  <object id="25" name="tree" x="3057" y="832" width="96" height="98"/>
+  <object id="28" name="tree" x="3477" y="832" width="96" height="98"/>
+  <object id="29" name="tree" x="3720" y="832" width="96" height="98"/>
+  <object id="30" name="appletree" x="4171" y="832" width="96" height="98"/>
+  <object id="37" name="tree" x="3301" y="832" width="96" height="98"/>
+ </objectgroup>
+ <objectgroup name="enemy">
+  <object id="33" name="bear" x="5343" y="846" width="97" height="97">
+   <properties>
+    <property name="range" type="float" value="400"/>
+   </properties>
+  </object>
+ </objectgroup>
+</map>

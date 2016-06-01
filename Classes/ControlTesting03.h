@@ -4,6 +4,7 @@
 #include "cocos2d.h"
 #include <vector>
 #include "GameData.h"
+#include "Enemy.h"
 
 class Control3 : public cocos2d::Layer
 {
@@ -22,16 +23,24 @@ public:
 	void setViewpoint(cocos2d::Vec2 position);
 	cocos2d::Vec2 convertToTilePosition(cocos2d::Vec2 position);
 	void simplePhysics(); //will go inside update
+	void playerAnimationCache();
 
 	void changeArea(bool right);
 	void resetScene();
 	void finishActionInstance();
 	void spreadResource();
-
+	void swingPlayer(int swingType);
 	void showItems();
+	void updateHPBar();
+
+	void equipmentCache();
 
 	void npcAI();
 	void spawnNPC(int npcNumber);
+
+	void receivePlayerDamage();
+
+	void resetPlayerActions();
 
     // a selector callback
     void menuCloseCallback(cocos2d::Ref* pSender);
@@ -46,6 +55,13 @@ public:
 
 private:
 	
+	enum SWING_TYPE
+	{
+		SWING_AXE,
+		SWING_SWORD,
+		SWING_PICK
+	};
+
 	struct PlayerInventory
 	{
 		PlayerInventory()
@@ -112,12 +128,14 @@ private:
 	};
 
 	cocos2d::Sprite* m_character;
+	cocos2d::Sprite* m_hpBar;
 	std::vector<cocos2d::Sprite*> m_npcVector;
 	std::vector<cocos2d::Sprite*> m_resourceVector;
 	std::vector<cocos2d::Sprite*> m_resourceIconVector;
 	std::vector<cocos2d::Sprite*> m_itemsVector;
 	std::vector <cocos2d::Label*> m_itemCountVector;
 	std::vector<NPCStates> m_npcStateVector;
+	cocos2d::AnimationCache* m_playerAnimCache;
 	cocos2d::TMXTiledMap* m_tilemap;
 	cocos2d::TMXLayer* m_collisionLayer;
 	bool m_directionRight;
@@ -141,6 +159,8 @@ private:
 	cocos2d::Node* m_uiNode;
 
 	int m_talkingNPCIndex;
+
+	Enemy m_enemy;
 
 	//Sprite names
 	const std::string POPUP_SPRITE = "PopUp";
@@ -176,6 +196,9 @@ private:
 	bool m_createdResourcePopup;
 	int m_actingResourceIndex;
 	int m_actedResourceCount;
+	bool m_swinging;
+	bool m_attackOnce;
+	bool m_animationInstanced;
 
 	float m_inventoryY;
 
@@ -185,6 +208,10 @@ private:
 	float m_accelerationX;
 	float m_frictionX;
 	float m_jumpForce;
+	int m_damage;
+	int m_hp;
+
+	bool m_isTutorialHome;
 
 	PlayerInventory m_inventorySlot[10];
 };

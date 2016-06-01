@@ -37,6 +37,20 @@ bool TitlleScene::init()
     //    you may modify it.
 
     // add a "close" icon to exit the progress. it's an autorelease object
+
+	auto Delay = DelayTime::create(0.5f);
+	auto Fadein = FadeIn::create(1.5f);
+	auto Sequence = Sequence::create(Delay, Fadein, NULL);
+
+	auto TitleName = Sprite::create("img/ui/titleLogo.png");
+	//透明度
+	TitleName->setOpacity(0);
+	TitleName->setPosition(Vec2(visibleSize.width / 2, visibleSize.height / 1.5));
+	TitleName->setScale(0.8f);
+	//フェードイン
+	TitleName->runAction(Sequence);
+	this->addChild(TitleName);
+
     auto closeItem = MenuItemImage::create(
                                            "CloseNormal.png",
                                            "CloseSelected.png",
@@ -45,36 +59,31 @@ bool TitlleScene::init()
 	closeItem->setPosition(Vec2(origin.x + visibleSize.width - closeItem->getContentSize().width/2 ,
                                 origin.y + closeItem->getContentSize().height/2));
 
+	closeItem->setVisible(false);
     // create menu, it's an autorelease object
     auto menu = Menu::create(closeItem, NULL);
     menu->setPosition(Vec2::ZERO);
     this->addChild(menu, 1);
-
-
-    /////////////////////////////
-    // 3. add your codes below...
-
-    // add a label shows "Hello World"
-    // create and initialize a label
     
-    auto label = Label::createWithTTF("Control Testing", "fonts/Marker Felt.ttf", 36);
+    auto label = Label::createWithTTF("TOWNS AGE", "fonts/Marker Felt.ttf", 36);
     
     // position the label on the center of the screen
     label->setPosition(Vec2(origin.x + visibleSize.width/2,
                             origin.y + visibleSize.height - label->getContentSize().height));
 
     // add the label as a child to this layer
-    this->addChild(label, 1);
+    //this->addChild(label, 1);
 
 	UserDefault* def = UserDefault::getInstance();
 	//def->setIntegerForKey("AreaATM", 0);
-	def->setIntegerForKey("MapArea", mapData::HOME_MAP);
+	def->setIntegerForKey("MapArea", 1);
 	def->setBoolForKey("FromRight", true);
 	for (int i = 0; i < 14; ++i)
 	{
-		def->setIntegerForKey(mapData::leftMap[i].c_str(), 1);
-		def->setIntegerForKey(mapData::rightMap[i].c_str(), 1);
+		def->setIntegerForKey(mapData::leftMap[i].c_str(), 2);
+		def->setIntegerForKey(mapData::rightMap[i].c_str(), 3);
 	}
+	//def->setIntegerForKey(mapData::rightMap[1].c_str(), 2);
 
 	def->setIntegerForKey("inventorySlotType01", 0);
 	def->setIntegerForKey("inventorySlotType02", 0);
@@ -97,6 +106,7 @@ bool TitlleScene::init()
 	def->setIntegerForKey("inventorySlotAmount08", 0);
 	def->setIntegerForKey("inventorySlotAmount09", 0);
 	def->setIntegerForKey("inventorySlotAmount10", 0);
+	def->setIntegerForKey("hp", 1000);
 
 	def->flush();
 
@@ -104,16 +114,67 @@ bool TitlleScene::init()
 	//control1->setPosition(origin.x + visibleSize.width/2, origin.y + visibleSize.height*4/6);
 	//auto control2 = MenuItemFont::create("Classic", CC_CALLBACK_1(TitlleScene::menuTransitionCallback, this, 1)); //index 1
 	//control2->setPosition(origin.x + visibleSize.width / 2, origin.y + visibleSize.height * 3 / 6);
-	auto control3 = MenuItemFont::create("PLAY", CC_CALLBACK_1(TitlleScene::menuTransitionCallback, this, 2)); //index 2
+	auto control3 = MenuItemFont::create("TUTORIAL", CC_CALLBACK_1(TitlleScene::menuTransitionCallback, this, 2)); //index 2
 	control3->setPosition(origin.x + visibleSize.width / 2, visibleSize.height / 2);
 
 	auto controlMenu = Menu::create(control3, NULL);
 	controlMenu->setPosition(Vec2::ZERO);
-	this->addChild(controlMenu);
+	//this->addChild(controlMenu);
+
+	char* messageTbl[] =
+	{
+		"  ",
+		"  ",
+		"  ",
+		"  "
+
+	};
+	//テーブルの要素数だけ回す　ボタン追加するなら数字も追加
+	for (int i = 0; i < 1; i++)
+	{	//どのボタンが何番でどこにあるのか
+		//偶数が右で奇数が左（ボタンの位置）
+		if (i % 2 == 0)
+		{
+			ButtonCreate("", i, Vec2(visibleSize.width / 2, visibleSize.height / 3.7 - 22 * (i)));
+		}
+		else
+		{
+			ButtonCreate(messageTbl[i], i, Vec2(visibleSize.width / 2 + 150, visibleSize.height / 2.5 * (i - 1)));
+		}
+	}
+
 
     return true;
 }
 
+void TitlleScene::ButtonCreate(char* name, int num, Vec2 pos)
+{
+	auto Delay = DelayTime::create(1.2f);
+	auto Fadein = FadeIn::create(1.0f);
+	auto Sequence = Sequence::create(Delay, Fadein, NULL);
+
+	//ボタンの画像。仮画像
+	auto button = ui::Button::create("img/ui/new.png");
+	//ポジション設定
+	button->setPosition(pos);
+	//9分割して引き伸ばし。文字がきれいに見える
+	button->setScale9Enabled(true);
+	//ラベル
+	button->setTitleText(name);
+	//フォントサイズ
+	button->setTitleFontSize(30);
+	//透明度
+	button->setOpacity(0);
+	//アクション
+	button->runAction(Sequence);
+
+
+	this->addChild(button);
+	//タグ付
+	button->setTag(num);
+	//タッチを有効に
+	button->addTouchEventListener(CC_CALLBACK_2(TitlleScene::touchEvent, this));
+}
 
 void TitlleScene::menuCloseCallback(Ref* pSender)
 {
@@ -147,4 +208,51 @@ void TitlleScene::menuTransitionCallback(cocos2d::Ref* pSender, int index)
 	{
 		Director::getInstance()->replaceScene(scene);
 	}
+}
+
+void TitlleScene::touchEvent(Ref *pSender, cocos2d::ui::Widget::TouchEventType type)
+{
+	auto spr = (CCSprite *)pSender;
+	auto tag = spr->getTag();
+	//typeでタッチイベント指定
+	switch (type)
+	{
+		//タッチ開始
+	case ui::Widget::TouchEventType::BEGAN:
+		//タグをゲットし、割り振る
+		switch (tag)
+		{
+		case	0:
+			Director::getInstance()->replaceScene(Control3::createScene());
+			break;
+		case	1:
+			//ゲーム画面に遷移
+			//Director::getInstance()->replaceScene(GameScene::createScene());
+			break;
+		case	2:
+			//オプション画面に遷移
+			//Director::getInstance()->pushScene(Opsion::createScene());
+			break;
+		case	3:
+			//ED一覧に遷移
+			//Director::getInstance()->replaceScene(Collection::createScene());
+			break;
+
+		default:
+			break;
+		}
+		//ここまでボタン
+		break;
+
+	default:
+		break;
+	}
+	//タッチ終了
+}
+
+void TitlleScene::Action()
+{
+	//フェードインとかまとめてこっちで管理したい|дﾟ)
+
+
 }

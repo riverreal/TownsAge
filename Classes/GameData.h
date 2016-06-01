@@ -37,7 +37,9 @@ namespace mapData
 	enum MAP_ID
 	{
 		HOME_MAP,
-		FOREST01
+		FOREST01,
+		MAP_TUTORIAL,
+		MAP_TUTORIAL2
 	};
 
 	const std::string mapPath[] = 
@@ -104,7 +106,7 @@ namespace buildingData
 	const std::string buildingPath[] = 
 	{
 		"",
-		"img/ui/houseIcon.png",
+		"img/buildings/p_a03.png",
 		"img/ui/towerIcon.png"
 	};
 
@@ -138,7 +140,7 @@ namespace buildingData
 	const building buildingRecepe[] =
 	{
 		building("", BUILDING_NONE, 0, BUILDING_NONE, 0, BUILDING_NONE, 0),
-		building("house", WOOD, 5, STONE, 1, BUILDING_NONE, 0),
+		building("house", WOOD, 5, BUILDING_NONE, 0, BUILDING_NONE, 0),
 		building("tower", WOOD, 10, STONE, 5, BUILDING_NONE, 0)
 	};
 }
@@ -177,7 +179,7 @@ namespace resourceData
 	const spreadIcons resourceSpread[] =
 	{
 		spreadIcons("", RESOURCE_NONE, RESOURCE_NONE, RESOURCE_NONE, RESOURCE_NONE, RESOURCE_NONE),
-		spreadIcons("tree", WOOD, STONE, APPLE, WOOD, RESOURCE_NONE),
+		spreadIcons("tree", WOOD, WOOD, RESOURCE_NONE, RESOURCE_NONE, RESOURCE_NONE),
 		spreadIcons("appletree", WOOD, WOOD, APPLE, RESOURCE_NONE, RESOURCE_NONE)
 	};
 }

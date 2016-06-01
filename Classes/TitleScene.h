@@ -3,6 +3,9 @@
 
 #include "cocos2d.h"
 
+#include "ui/CocosGUI.h"
+#pragma execution_character_set("utf-8");
+
 class TitlleScene : public cocos2d::Layer
 {
 public:
@@ -14,6 +17,10 @@ public:
     void menuCloseCallback(cocos2d::Ref* pSender);
 
 	void menuTransitionCallback(cocos2d::Ref* pSender, int index);
+
+	void ButtonCreate(char* name, int num, cocos2d::Vec2 pos);
+	void touchEvent(cocos2d::Ref *pSender, cocos2d::ui::Widget::TouchEventType type);
+	void Action();
     
     // implement the "static create()" method manually
     CREATE_FUNC(TitlleScene);
