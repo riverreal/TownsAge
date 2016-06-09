@@ -41,9 +41,12 @@ public:
 	void receivePlayerDamage();
 
 	void resetPlayerActions();
+	void createBuilding(float posX, float npcfootY);
 
     // a selector callback
-    void menuCloseCallback(cocos2d::Ref* pSender);
+    void menuCloseCallback();
+
+	void nextStep();
     
 	//controls
 	void onTouchesBegan(const std::vector<cocos2d::Touch*>& touch, cocos2d::Event* eventt);
@@ -76,7 +79,9 @@ private:
 		{
 		}
 
+		//Item Type integer stored as RESOURCE_ID
 		int itemType;
+		//Amount of item of the same type
 		int itemAmount;
 	};
 
@@ -95,7 +100,8 @@ private:
 			firstTimeState(true),
 			buildingNum1(1),
 			buildingNum2(0),
-			buildingNum3(0)
+			buildingNum3(0),
+			buildingDone(false)
 		{};
 
 		//Parameter asignment contructor
@@ -110,7 +116,8 @@ private:
 			firstTimeState(true),
 			buildingNum1(1),
 			buildingNum2(0),
-			buildingNum3(0)
+			buildingNum3(0),
+			buildingDone(false)
 		{};
 
 		int stateID;
@@ -125,6 +132,7 @@ private:
 		int buildingNum1;
 		int buildingNum2;
 		int buildingNum3;
+		bool buildingDone;
 	};
 
 	cocos2d::Sprite* m_character;
@@ -144,6 +152,8 @@ private:
 	bool m_isCreatedActionPopUp;
 	int m_talkChecker;
 
+	bool m_disableGame;
+
 	//Control related
 	cocos2d::Rect m_rightRect;
 	cocos2d::Rect m_leftRect;
@@ -157,6 +167,8 @@ private:
 
 	cocos2d::Node* m_gameNode;
 	cocos2d::Node* m_uiNode;
+	cocos2d::Node* m_temporaryNode;
+	cocos2d::Node* m_skyNode;
 
 	int m_talkingNPCIndex;
 
@@ -212,6 +224,10 @@ private:
 	int m_hp;
 
 	bool m_isTutorialHome;
+	bool m_isTutorial;
+	bool m_stepDone;
+	int m_step;
+	bool m_inTimeMachine;
 
 	PlayerInventory m_inventorySlot[10];
 };

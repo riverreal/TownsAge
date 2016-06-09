@@ -83,7 +83,7 @@ bool TitlleScene::init()
 		def->setIntegerForKey(mapData::leftMap[i].c_str(), 2);
 		def->setIntegerForKey(mapData::rightMap[i].c_str(), 3);
 	}
-	//def->setIntegerForKey(mapData::rightMap[1].c_str(), 2);
+	def->setIntegerForKey(mapData::rightMap[1].c_str(), 2);
 
 	def->setIntegerForKey("inventorySlotType01", 0);
 	def->setIntegerForKey("inventorySlotType02", 0);
@@ -107,6 +107,8 @@ bool TitlleScene::init()
 	def->setIntegerForKey("inventorySlotAmount09", 0);
 	def->setIntegerForKey("inventorySlotAmount10", 0);
 	def->setIntegerForKey("hp", 1000);
+
+	def->setBoolForKey("HasTimeMachinePart", false);
 
 	def->flush();
 
@@ -143,18 +145,32 @@ bool TitlleScene::init()
 		}
 	}
 
+	
 
     return true;
 }
 
 void TitlleScene::ButtonCreate(char* name, int num, Vec2 pos)
 {
+
+	auto button = ui::Button::create("img/ui/new.png");
+
+
+	auto tiltingFunc = CallFunc::create([button]() {
+		auto quickFadeIn = FadeIn::create(0.8f);
+		auto pause = DelayTime::create(1.0f);
+		auto quickFadeOut = FadeOut::create(0.8f);
+		auto shortPause = DelayTime::create(0.5f);
+		auto tilting = RepeatForever::create(Sequence::create(quickFadeOut, shortPause, quickFadeIn, pause, NULL));
+		button->runAction(tilting);
+	});
+
 	auto Delay = DelayTime::create(1.2f);
 	auto Fadein = FadeIn::create(1.0f);
-	auto Sequence = Sequence::create(Delay, Fadein, NULL);
+	auto Sequence = Sequence::create(Delay, Fadein, tiltingFunc, NULL);
 
 	//ボタンの画像。仮画像
-	auto button = ui::Button::create("img/ui/new.png");
+	
 	//ポジション設定
 	button->setPosition(pos);
 	//9分割して引き伸ばし。文字がきれいに見える
@@ -168,6 +184,7 @@ void TitlleScene::ButtonCreate(char* name, int num, Vec2 pos)
 	//アクション
 	button->runAction(Sequence);
 
+	button->setName("new");
 
 	this->addChild(button);
 	//タグ付
