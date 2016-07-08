@@ -6,6 +6,42 @@ using namespace cocos2d;
 Enemy::Enemy()
 	:m_collidedMonsterIndex(-1)
 {
+	
+	std::string tmp[9] =
+	{
+		"bear",
+		"lizard",
+		"snake",
+		"spider",
+		"bat",
+		"scorpion",
+		"frog",
+		"hippo",
+		"soldier"
+	};
+	for (int i = 0; i < 9; i++)
+	{
+		m_name[i] = tmp[i];
+	}
+
+	std::string tmp2[9]=
+	{
+			"img/enemies/forest_bear.png",
+			"img/enemies/forest_lizard.png",
+			"img/enemies/desert_snake.png",
+			"img/enemies/cave_spider.png",
+			"img/enemies/cave_bat.png",
+			"img/enemies/desert_scorpion.png",
+			"img/enemies/swamp_frog.png",
+			"img/enemies/swamp_hippo.png",
+			"img/enemies/soldier.png"
+		
+	};
+	for (int i = 0; i < 9; i++)
+	{
+		m_path[i] = tmp2[i];
+	};
+
 }
 
 Enemy::~Enemy()
