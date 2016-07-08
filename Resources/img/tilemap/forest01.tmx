@@ -28,11 +28,11 @@
   <object id="2" name="NextLeft" x="447.5" y="960.5" width="31.5" height="31"/>
  </objectgroup>
  <objectgroup name="collectable">
-  <object id="3" name="tree" x="897.333" y="899.333" width="96" height="93.3333"/>
-  <object id="4" name="tree" x="1210.66" y="902" width="96" height="93.3333"/>
-  <object id="6" name="tree" x="1915.33" y="899.333" width="96" height="93.3333"/>
-  <object id="7" name="tree" x="3050.66" y="901.333" width="96" height="93.3333"/>
-  <object id="8" name="tree" x="4193.33" y="901.333" width="96" height="93.3333"/>
-  <object id="9" name="tree" x="4964" y="900.667" width="96" height="93.3333"/>
+  <object id="3" name="tree1" x="897.333" y="899.333" width="96" height="93.3333"/>
+  <object id="4" name="tree2" x="1210.66" y="902" width="96" height="93.3333"/>
+  <object id="6" name="tree3" x="1915.33" y="899.333" width="96" height="93.3333"/>
+  <object id="7" name="tree4" x="3050.66" y="901.333" width="96" height="93.3333"/>
+  <object id="8" name="tree5" x="4193.33" y="901.333" width="96" height="93.3333"/>
+  <object id="9" name="tree3" x="4964" y="900.667" width="96" height="93.3333"/>
  </objectgroup>
 </map>

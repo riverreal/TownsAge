@@ -30,13 +30,27 @@ bool Control3::init()
 		return false;
 	}
 
-	Size visibleSize = Director::getInstance()->getVisibleSize();
-	Vec2 origin = Director::getInstance()->getVisibleOrigin();
+	auto visibleSize = Director::getInstance()->getVisibleSize();
+	auto origin = Director::getInstance()->getVisibleOrigin();
 
-	m_isTutorialHome = false;
-	m_inTimeMachine = false;
-	m_isTutorial = true;
+	auto def = UserDefault::getInstance();
+
+	
+	m_isTutorial = def->getBoolForKey("tutorial");
+	if (def->getIntegerForKey("MapArea") != 0 && m_isTutorial)
+	{
+		m_isTutorialHome = true;
+	}
+	else
+	{
+		m_isTutorialHome = false;
+	}
+
 	m_stepDone = true;
+	m_inTimeMachine = false;
+
+	m_timeOfDay = 0;
+	m_frameCounter = 0;
 
 	//physics variable initialization
 	m_standing = true;
@@ -58,7 +72,9 @@ bool Control3::init()
 	m_gameNode = Node::create();
 	m_uiNode = Node::create();
 	m_temporaryNode = Node::create();
+	m_backgroundNode = Node::create();
 	m_skyNode = Node::create();
+	m_foregroundNode = Node::create();
 
 	//facing right by default
 	m_directionRight = true;
@@ -76,10 +92,20 @@ bool Control3::init()
 
 	m_talkChecker = 0;
 
-	auto def = UserDefault::getInstance();
-	//Area system
-	// <--- Left Map      HOME     Right Map --->
-	// -5, -4, -3, -2, -1,  0,  1,  2,  3,  4,  5
+	//Old Area system
+	//    <--- Left Map      HOME     Right Map --->
+	// ...-5, -4, -3, -2, -1,  0,  1,  2,  3,  4,  5...
+
+	//New Area System
+	//           <-  ->
+	//             0
+ 	//           9   1 
+ 	//         8       2
+	//         7       3
+	//           6   4
+	//             5
+	//           <-  ->
+	//         Cycle map
 	int area = def->getIntegerForKey("MapArea");
 	bool fromRight = def->getBoolForKey("FromRight");
 	int playerX;
@@ -87,20 +113,20 @@ bool Control3::init()
 	//right map
 	if (area > 0)
 	{
-		if (def->getIntegerForKey(mapData::rightMap[area].c_str()) == mapData::FOREST01)
+		if (def->getIntegerForKey(mapData::rightMap[abs(area)].c_str()) == mapData::FOREST01)
 		{
 			m_tilemap = TMXTiledMap::create("img/tilemap/forest01.tmx");
 		}
-		else if(def->getIntegerForKey(mapData::rightMap[area].c_str()) == mapData::MAP_TUTORIAL)
+		else if(def->getIntegerForKey(mapData::rightMap[abs(area)].c_str()) == mapData::MAP_TUTORIAL)
 		{
 			m_tilemap = TMXTiledMap::create("img/tilemap/tutorial.tmx");
 		}
-		else if (def->getIntegerForKey(mapData::rightMap[area].c_str()) == mapData::MAP_TUTORIAL2)
+		else if (def->getIntegerForKey(mapData::rightMap[abs(area)].c_str()) == mapData::MAP_TUTORIAL2)
 		{
 			m_isTutorialHome = true;
 			m_tilemap = TMXTiledMap::create("img/tilemap/tutorial2.tmx");
 		}
-		else if (def->getIntegerForKey(mapData::rightMap[area].c_str()) == mapData::HOME_MAP)
+		else if (def->getIntegerForKey(mapData::rightMap[abs(area)].c_str()) == mapData::HOME_MAP)
 		{
 			m_tilemap = TMXTiledMap::create("img/tilemap/home.tmx");
 		}
@@ -112,19 +138,19 @@ bool Control3::init()
 	//left map
 	else if (area < 0)
 	{
-		if (def->getIntegerForKey(mapData::rightMap[area].c_str()) == mapData::FOREST01)
+		if (def->getIntegerForKey(mapData::rightMap[abs(area)].c_str()) == mapData::FOREST01)
 		{
 			m_tilemap = TMXTiledMap::create("img/tilemap/forest01.tmx");
 		}
-		else if (def->getIntegerForKey(mapData::rightMap[area].c_str()) == mapData::MAP_TUTORIAL)
+		else if (def->getIntegerForKey(mapData::rightMap[abs(area)].c_str()) == mapData::MAP_TUTORIAL)
 		{
 			m_tilemap = TMXTiledMap::create("img/tilemap/tutorial.tmx");
 		}
-		else if (def->getIntegerForKey(mapData::rightMap[area].c_str()) == mapData::MAP_TUTORIAL2)
+		else if (def->getIntegerForKey(mapData::rightMap[abs(area)].c_str()) == mapData::MAP_TUTORIAL2)
 		{
 			m_tilemap = TMXTiledMap::create("img/tilemap/tutorial2.tmx");
 		}
-		else if (def->getIntegerForKey(mapData::rightMap[area].c_str()) == mapData::HOME_MAP)
+		else if (def->getIntegerForKey(mapData::rightMap[abs(area)].c_str()) == mapData::HOME_MAP)
 		{
 			m_tilemap = TMXTiledMap::create("img/tilemap/home.tmx");
 		}
@@ -137,6 +163,16 @@ bool Control3::init()
 	else
 	{
 		m_tilemap = TMXTiledMap::create("img/tilemap/home.tmx");
+	}
+
+	if (m_isTutorial)
+	{
+		m_tilemap = TMXTiledMap::create("img/tilemap/tutorial.tmx");
+
+		if (m_isTutorialHome)
+		{
+			m_tilemap = TMXTiledMap::create("img/tilemap/tutorial2.tmx");
+		}
 	}
 
 	m_gameNode->addChild(m_tilemap, -1);
@@ -176,15 +212,55 @@ bool Control3::init()
 		auto collectVector = collectableGroup->getObjects();
 		for (auto& item : collectVector)
 		{
-			if (item.asValueMap()["name"].asString() == "tree")
+			if (item.asValueMap()["name"].asString() == "tree1")
+			{
+				auto sprite = Sprite::create("img/resources/tree01.png");
+				sprite->setPositionX(item.asValueMap()["x"].asInt() + sprite->getContentSize().width / 2);
+				sprite->setPositionY(item.asValueMap()["y"].asInt() + sprite->getContentSize().height / 2);
+				sprite->setName("tree");
+				m_gameNode->addChild(sprite);
+				m_resourceVector.push_back(sprite);
+			}
+			
+			else if (item.asValueMap()["name"].asString() == "tree2")
 			{
 				auto sprite = Sprite::create("img/resources/tree02.png");
 				sprite->setPositionX(item.asValueMap()["x"].asInt() + sprite->getContentSize().width / 2);
 				sprite->setPositionY(item.asValueMap()["y"].asInt() + sprite->getContentSize().height / 2);
-				sprite->setName(item.asValueMap()["name"].asString());
+				sprite->setName("tree");
 				m_gameNode->addChild(sprite);
 				m_resourceVector.push_back(sprite);
 			}
+
+			else if (item.asValueMap()["name"].asString() == "tree3")
+			{
+				auto sprite = Sprite::create("img/resources/tree04.png");
+				sprite->setPositionX(item.asValueMap()["x"].asInt() + sprite->getContentSize().width / 2);
+				sprite->setPositionY(item.asValueMap()["y"].asInt() + sprite->getContentSize().height / 2);
+				sprite->setName("tree");
+				m_gameNode->addChild(sprite);
+				m_resourceVector.push_back(sprite);
+			}
+			else if (item.asValueMap()["name"].asString() == "tree4")
+			{
+				auto sprite = Sprite::create("img/resources/tree05.png");
+				sprite->setPositionX(item.asValueMap()["x"].asInt() + sprite->getContentSize().width / 2);
+				sprite->setPositionY(item.asValueMap()["y"].asInt() + sprite->getContentSize().height / 2);
+				sprite->setName("tree");
+				m_gameNode->addChild(sprite);
+				m_resourceVector.push_back(sprite);
+			}
+
+			else if (item.asValueMap()["name"].asString() == "tree5")
+			{
+				auto sprite = Sprite::create("img/resources/tree06.png");
+				sprite->setPositionX(item.asValueMap()["x"].asInt() + sprite->getContentSize().width / 2);
+				sprite->setPositionY(item.asValueMap()["y"].asInt() + sprite->getContentSize().height / 2);
+				sprite->setName("tree");
+				m_gameNode->addChild(sprite);
+				m_resourceVector.push_back(sprite);
+			}
+
 			else if (item.asValueMap()["name"].asString() == "appletree")
 			{
 				auto sprite = Sprite::create("img/resources/tree03.png");
@@ -205,8 +281,6 @@ bool Control3::init()
 			}
 		}
 	}
-
-	
 
 	auto leftArrow = Sprite::create("img/ui/red-arrow.png");
 	leftArrow->setRotation(-90);
@@ -270,7 +344,7 @@ bool Control3::init()
 
 	m_character->runAction(RepeatForever::create(Animate::create(m_playerAnimCache->getAnimation("idle"))));
 
-	if (area == mapData::HOME_MAP)
+	if (area == mapData::HOME_MAP && !m_isTutorial)
 	{
 		//spawn 4 npcs
 		spawnNPC(4);
@@ -302,23 +376,6 @@ bool Control3::init()
 	aButton->setScale(0.35);
 	m_uiNode->addChild(aButton);
 
-	// add a "close" icon to exit the progress. it's an autorelease object
-	/*
-	auto closeItem = MenuItemImage::create(
-		"CloseNormal.png",
-		"CloseSelected.png",
-		CC_CALLBACK_1(Control3::menuCloseCallback, this));
-	//closeItem->setScale(3);
-	closeItem->setPosition(Vec2(origin.x + visibleSize.width - closeItem->getBoundingBox().getMaxX(),
-		origin.y + closeItem->getBoundingBox().getMaxY()));
-	closeItem->setVisible(false);
-
-	// create menu, it's an autorelease object
-	auto menu = Menu::create(closeItem, NULL);
-	menu->setPosition(Vec2::ZERO);
-	m_uiNode->addChild(menu);
-	*/
-
 	m_rightRect = Rect(rightButton->getBoundingBox());
 	m_leftRect = Rect(leftButton->getBoundingBox());
 	m_jButtonRect = Rect(jButton->getBoundingBox());
@@ -330,23 +387,19 @@ bool Control3::init()
 	listener->onTouchesEnded = CC_CALLBACK_2(Control3::onTouchesEnded, this);
 
 	Director::getInstance()->getEventDispatcher()->addEventListenerWithSceneGraphPriority(listener, this);
-	m_gameNode->setScale(1.5);
+	m_gameNode->setScale(1.5f);
 
 	m_gameNode->setPosition(Vec2::ZERO);
 	m_uiNode->setPosition(Vec2::ZERO);
 	m_temporaryNode->setPosition(Vec2::ZERO);
+	m_backgroundNode->setPosition(Vec2::ZERO);
 	m_skyNode->setPosition(Vec2::ZERO);
 	this->addChild(m_gameNode);
-	this->addChild(m_uiNode);
+	this->addChild(m_uiNode, 20);
+	this->addChild(m_backgroundNode, -10);
+	this->addChild(m_skyNode, -30);
+	this->addChild(m_foregroundNode, 10);
 	this->addChild(m_temporaryNode);
-	this->addChild(m_skyNode, -10);
-	//mid day
-	//bg = LayerGradient::create(Color4B(34, 98, 206, 255), Color4B(193, 205, 219, 255), Vec2(0, -1));
-	//Dawn
-	//bg = LayerGradient::create(Color4B(11, 40, 110, 255), Color4B(169, 110, 78, 255), Vec2(0, -1));
-	
-	auto bg = LayerGradient::create(Color4B(34, 98, 206, 255), Color4B(173, 240, 245, 255), Vec2(0, -1));
-	m_skyNode->addChild(bg, -50);
 
 	auto enemyGroup = m_tilemap->getObjectGroup("enemy");
 	if (enemyGroup)
@@ -360,6 +413,33 @@ bool Control3::init()
 	}
 
 	m_enemy.InitEnemies(m_gameNode);
+
+	//Background
+	m_background.Init(m_character->getPosition(), m_timeOfDay, visibleSize.width, m_gameNode);
+
+	auto backgroundGroup = m_tilemap->getObjectGroup("bg");
+	if (backgroundGroup)
+	{
+		auto backgroundVector = backgroundGroup->getObjects();
+		for (auto &bg : backgroundVector)
+		{
+			if (bg.asValueMap()["name"].asString() == "forest")
+			{
+				auto bgPos = Vec2(bg.asValueMap()["x"].asFloat(), bg.asValueMap()["y"].asFloat());
+				m_background.AddParallaxLayer("img/bg/forest_bg01.png", 0.82f, bgPos, m_gameNode->getScale());
+			}
+		}
+	}
+
+	m_backgroundNode->addChild(m_background.GetBackgroundNode());
+	m_skyNode->addChild(m_background.GetSkyNode());
+	m_foregroundNode->addChild(m_background.GetShadeSprite());
+
+	/*
+	auto ambientDust = ParticleSystemQuad::create("img/particles/ambient_dust.plist");
+	ambientDust->setPosition(visibleSize.width / 2, visibleSize.height / 2);
+	m_foregroundNode->addChild(ambientDust);
+	*/
 
 	setViewpoint(m_character->getPosition());
 	m_hpBar = Sprite::create("img/ui/hpBar.png");
@@ -416,6 +496,9 @@ bool Control3::init()
 		timeMachine->setScale(2.5);
 		m_gameNode->addChild(timeMachine);
 	}
+
+	
+	
 
     return true;
 }
@@ -563,8 +646,6 @@ void Control3::resourcePopup()
 {
 	bool created = false;
 
-	CCLOG("resource vector size: %i", static_cast<int>(m_resourceVector.size()));
-
 	for (int i = 0; i < m_resourceVector.size(); i++)
 	{
 		auto resource = m_resourceVector[i];
@@ -634,7 +715,7 @@ void Control3::resourcePopup()
 	
 }
 
-void Control3::setViewpoint(cocos2d::Vec2 position)
+Vec2 Control3::setViewpoint(cocos2d::Vec2 position)
 {
 	auto visibleSize = Director::getInstance()->getWinSize();
 
@@ -652,6 +733,7 @@ void Control3::setViewpoint(cocos2d::Vec2 position)
 	defPosition -= (visibleSize / 2) * (m_gameNode->getScale() - 1);
 	
 	m_gameNode->setPosition(defPosition);
+	return defPosition;
 }
 
 Vec2 Control3::convertToTilePosition(Vec2 position)
@@ -775,8 +857,8 @@ void Control3::simplePhysics()
 
 				m_gameNode->setCascadeOpacityEnabled(true);
 				m_uiNode->setCascadeOpacityEnabled(true);
-				m_skyNode->setCascadeOpacityEnabled(true);
-				m_temporaryNode->setZOrder(10);
+				m_backgroundNode->setCascadeOpacityEnabled(true);
+				m_temporaryNode->setZOrder(21);
 
 				auto screenFiller = Sprite::create("img/bg.png");
 				auto visibleSize = Director::getInstance()->getVisibleSize();
@@ -1026,7 +1108,6 @@ void Control3::simplePhysics()
 					arrowV->setPosition(enginePos.x, enginePos.y + 70);
 					auto blink = Blink::create(3, 3);
 					arrowV->runAction(Sequence::create(blink, NULL));
-
 				}
 				break;
 				case 5:
@@ -1127,7 +1208,6 @@ void Control3::simplePhysics()
 				}
 				break;
 				default:
-
 					break;
 				}
 			}
@@ -1266,7 +1346,6 @@ void Control3::simplePhysics()
 						{
 							m_character->setPositionX(m_character->getPositionX() - correctionDelta);
 						}
-						
 					}
 				}
 				else
@@ -1275,7 +1354,6 @@ void Control3::simplePhysics()
 					{
 						m_speedX = -m_accelerationX * 10;
 					}
-
 					m_speedX += m_accelerationX;
 					m_speedX = MIN(m_speedX, MAX_SPEED);
 				}
@@ -1524,32 +1602,28 @@ void Control3::changeArea(bool right)
 	
 	if (right)
 	{
-		area++;
-		/*
-		if (area <= 13)
+		if (area == 9)
 		{
-			area++;
+			area = 0;
 		}
 		else
 		{
-			//area = 0;
+			area++;
 		}
-		*/
+		
 		def->setBoolForKey("FromRight", true);
 	}
 	else
 	{
-		area--;
-		/*
-		if (area >= 13)
+		if (area == 0)
 		{
-			area++;
+			area = 9;
 		}
 		else
 		{
-			//area = 0;
+			area--;
 		}
-		*/
+		
 		def->setBoolForKey("FromRight", false);
 	}
 	def->setIntegerForKey("MapArea", area);
@@ -1608,10 +1682,7 @@ void Control3::finishActionInstance()
 			m_actedResourceCount = 0;
 		}
 	}
-	else
-	{	
-		
-	}
+
 	m_swinging = false;
 	m_animationInstanced = false;
 	m_attackOnce = false;
@@ -1620,9 +1691,7 @@ void Control3::finishActionInstance()
 void Control3::spreadResource()
 {
 	float movingTime = 0.5f;
-
 	int resourceTypes[5];
-
 	auto name = m_resourceVector[m_actingResourceIndex]->getName();
 
 	for (auto& item : resourceData::resourceSpread)
@@ -1732,7 +1801,7 @@ void Control3::showItems()
 						{
 							std::ostringstream ostr;
 							ostr << m_inventorySlot[i].itemAmount;
-							auto newCounter = Label::createWithTTF(ostr.str(), "fonts/arial.ttf", 17);
+							auto newCounter = Label::createWithTTF(ostr.str(), "fonts/misaki_gothic.ttf", 17);
 							newCounter->setPositionX(inventoryX + 100 * i + 17);
 							newCounter->setPositionY(m_inventoryY - 20);
 							m_uiNode->removeChild(m_itemCountVector[i]);
@@ -1789,7 +1858,7 @@ void Control3::showItems()
 
 				std::ostringstream ostr;
 				ostr << m_inventorySlot[i].itemAmount;
-				auto counter = Label::createWithTTF(ostr.str(), "fonts/arial.ttf", 17);
+				auto counter = Label::createWithTTF(ostr.str(), "fonts/misaki_gothic.ttf", 17);
 				counter->setPositionX(sprite->getPositionX() + 17);
 				counter->setPositionY(sprite->getPositionY() - 20);
 				m_uiNode->addChild(counter);
@@ -1928,7 +1997,6 @@ void Control3::npcAI()
 					createBuilding(m_npcVector[i]->getPositionX(), m_npcVector[i]->getBoundingBox().getMinY());
 				}
 			}
-			
 		}
 	}
 }
@@ -2003,6 +2071,65 @@ void Control3::createBuilding(float posX, float npcfootY)
 	auto animAction = Animate::create(anim);
 	building->runAction(animAction);
 	building->runAction(fadeIn);
+	//anim->release();
+
+	auto effectSprite = Sprite::create();
+	effectSprite->setPositionX(building->getPositionX());
+	effectSprite->setPositionY(npcfootY + ((building->getContentSize().height * m_gameNode->getScaleY() * building->getScaleY()) / 6));
+	effectSprite->setScale(1);
+	m_gameNode->addChild(effectSprite);
+
+	auto effectAnim = Animation::create();
+	effectAnim->addSpriteFrameWithFile("img/effects/buildingEffect/building_effect_000.png");
+	effectAnim->addSpriteFrameWithFile("img/effects/buildingEffect/building_effect_001.png");
+	effectAnim->addSpriteFrameWithFile("img/effects/buildingEffect/building_effect_002.png");
+	effectAnim->addSpriteFrameWithFile("img/effects/buildingEffect/building_effect_003.png");
+	effectAnim->addSpriteFrameWithFile("img/effects/buildingEffect/building_effect_004.png");
+	effectAnim->addSpriteFrameWithFile("img/effects/buildingEffect/building_effect_005.png");
+	effectAnim->addSpriteFrameWithFile("img/effects/buildingEffect/building_effect_006.png");
+	effectAnim->addSpriteFrameWithFile("img/effects/buildingEffect/building_effect_007.png");
+	effectAnim->addSpriteFrameWithFile("img/effects/buildingEffect/building_effect_008.png");
+	effectAnim->addSpriteFrameWithFile("img/effects/buildingEffect/building_effect_009.png");
+	effectAnim->setDelayPerUnit(0.3f);
+	effectAnim->setRestoreOriginalFrame(true);
+	effectAnim->setLoops(4);
+
+	auto effectAnimAction = Animate::create(effectAnim);
+	effectSprite->runAction(effectAnimAction);
+
+	auto completedSprite = Sprite::create();
+	completedSprite->setPositionX(building->getPositionX());
+	completedSprite->setPositionY(npcfootY + (building->getContentSize().height * m_gameNode->getScaleY() * building->getScaleY()));
+	m_gameNode->addChild(completedSprite);
+
+	auto completedAnim = Animation::create();
+	completedAnim->addSpriteFrameWithFileName("img/effects/completedEffect/completed_building_000.png");
+	completedAnim->addSpriteFrameWithFileName("img/effects/completedEffect/completed_building_001.png");
+	completedAnim->addSpriteFrameWithFileName("img/effects/completedEffect/completed_building_002.png");
+	completedAnim->addSpriteFrameWithFileName("img/effects/completedEffect/completed_building_003.png");
+	completedAnim->addSpriteFrameWithFileName("img/effects/completedEffect/completed_building_004.png");
+	completedAnim->addSpriteFrameWithFileName("img/effects/completedEffect/completed_building_005.png");
+	completedAnim->addSpriteFrameWithFileName("img/effects/completedEffect/completed_building_006.png");
+	completedAnim->addSpriteFrameWithFileName("img/effects/completedEffect/completed_building_007.png");
+	completedAnim->addSpriteFrameWithFileName("img/effects/completedEffect/completed_building_008.png");
+	completedAnim->addSpriteFrameWithFileName("img/effects/completedEffect/completed_building_009.png");
+	completedAnim->addSpriteFrameWithFileName("img/effects/completedEffect/completed_building_010.png");
+	completedAnim->addSpriteFrameWithFileName("img/effects/completedEffect/completed_building_011.png");
+	completedAnim->addSpriteFrameWithFileName("img/effects/completedEffect/completed_building_012.png");
+	completedAnim->addSpriteFrameWithFileName("img/effects/completedEffect/completed_building_013.png");
+	completedAnim->addSpriteFrameWithFileName("img/effects/completedEffect/completed_building_014.png");
+	completedAnim->addSpriteFrameWithFileName("img/effects/completedEffect/completed_building_015.png");
+	completedAnim->addSpriteFrameWithFileName("img/effects/completedEffect/completed_building_016.png");
+	completedAnim->addSpriteFrameWithFileName("img/effects/completedEffect/completed_building_017.png");
+	completedAnim->addSpriteFrameWithFileName("img/effects/completedEffect/completed_building_018.png");
+	completedAnim->addSpriteFrameWithFileName("img/effects/completedEffect/completed_building_019.png");
+	completedAnim->setDelayPerUnit(0.05f);
+	completedAnim->setRestoreOriginalFrame(true);
+	completedAnim->setLoops(2);
+
+	auto completedAction = Animate::create(completedAnim);
+	auto delay = DelayTime::create(12.0f);
+	completedSprite->runAction(Sequence::create(delay, completedAction, NULL));
 }
 
 void Control3::update(float dt)
@@ -2011,7 +2138,7 @@ void Control3::update(float dt)
 	{
 		auto damage = DamageHandler::GetInstance();
 		damage->ResetDamage();
-		setViewpoint(m_character->getPosition());
+		
 		resourcePopup();
 		simplePhysics();
 		npcAI();
@@ -2028,15 +2155,22 @@ void Control3::update(float dt)
 			}
 		}
 
-
 		//dmg calc
-		//CCLOG("Monster damage: %i", damage->GetMonsterDamage());
 		m_enemy.receiveDamage(false);
 		receivePlayerDamage();
 
 		updateHPBar();
+
+		m_background.UpdateBackground(setViewpoint(m_character->getPosition()), m_timeOfDay);
 	}
 	
+	m_timeOfDay++;
+
+	//25 min reset
+	if (m_timeOfDay >= 3600)
+	{
+		m_timeOfDay = 0;
+	}
 }
 
 void Control3::onTouchesBegan(const std::vector<cocos2d::Touch*>& touch, cocos2d::Event* eventt)
@@ -2082,6 +2216,7 @@ void Control3::onTouchesBegan(const std::vector<cocos2d::Touch*>& touch, cocos2d
 				m_actionTouchID = t->getID();
 			}
 
+			//icon touch
 			auto icon = m_gameNode->getChildByName(HOUSE_ICON_SPRITE);
 			if (icon != NULL)
 			{
@@ -2116,7 +2251,7 @@ void Control3::onTouchesBegan(const std::vector<cocos2d::Touch*>& touch, cocos2d
 						ostr << buildingData::buildingRecepe[buildingNum].res1Count;
 						std::string count1 = "x" + ostr.str();
 						ostr.str("");
-						auto resCounter1 = Label::createWithTTF(count1, "fonts/arial.ttf", fontSize * m_gameNode->getScale());
+						auto resCounter1 = Label::createWithTTF(count1, "fonts/misaki_gothic.ttf", fontSize * m_gameNode->getScale());
 						resCounter1->setColor(Color3B::BLACK);
 						resCounter1->enableOutline(Color4B::BLACK, outline);
 						resCounter1->setPosition(res1->getPositionX(), res1->getPositionY() - 30);
@@ -2136,7 +2271,7 @@ void Control3::onTouchesBegan(const std::vector<cocos2d::Touch*>& touch, cocos2d
 							ostr << buildingData::buildingRecepe[buildingNum].res2Count;
 							std::string count2 = "x" + ostr.str();
 							ostr.str("");
-							resCounter2 = Label::createWithTTF(count2, "fonts/arial.ttf", fontSize * m_gameNode->getScale());
+							resCounter2 = Label::createWithTTF(count2, "fonts/misaki_gothic.ttf", fontSize * m_gameNode->getScale());
 							resCounter2->setColor(Color3B::BLACK);
 							resCounter2->enableOutline(Color4B::BLACK, outline);
 							resCounter2->setPosition(res2->getPositionX(), res2->getPositionY() - 30);
@@ -2158,7 +2293,7 @@ void Control3::onTouchesBegan(const std::vector<cocos2d::Touch*>& touch, cocos2d
 								m_gameNode->addChild(res3);
 								ostr << buildingData::buildingRecepe[buildingNum].res3Count;
 								std::string count3 = "x" + ostr.str();
-								auto resCounter3 = Label::createWithTTF(count3, "fonts/arial.ttf", fontSize * m_gameNode->getScale());
+								auto resCounter3 = Label::createWithTTF(count3, "fonts/misaki_gothic.ttf", fontSize * m_gameNode->getScale());
 								resCounter3->setColor(Color3B::BLACK);
 								resCounter3->enableOutline(Color4B::BLACK, outline);
 								resCounter3->setPosition(res3->getPositionX(), res3->getPositionY() - 30);
@@ -2195,6 +2330,7 @@ void Control3::onTouchesBegan(const std::vector<cocos2d::Touch*>& touch, cocos2d
 				}
 			}
 
+			//building touch
 			auto buildingRes1 = m_gameNode->getChildByName(RESOURCE_1);
 			if (buildingRes1)
 			{
@@ -2223,6 +2359,27 @@ void Control3::onTouchesBegan(const std::vector<cocos2d::Touch*>& touch, cocos2d
 						}
 
 
+					}
+				}
+			}
+
+			//Food touch
+			for (int i = 0; i < m_itemsVector.size(); ++i)
+			{
+				auto item = m_itemsVector[i];
+				if (item->getTag() == APPLE)
+				{
+					if (item->getBoundingBox().intersectsRect(touchPoint))
+					{
+						for (int j = 0; j < 10; ++j)
+						{
+							if (m_inventorySlot[i].itemType == APPLE)
+							{
+								m_inventorySlot[i].itemAmount--;
+								m_hp += 20;
+								showItems();
+							}
+						}
 					}
 				}
 			}

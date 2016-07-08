@@ -84,6 +84,20 @@ namespace mapData
 		"RightMap13",
 		"RightMap14"
 	};
+
+	const std::string cicleMap[] =
+	{
+		"CycleMap00",
+		"CycleMap01",
+		"CycleMap02",
+		"CycleMap03",
+		"CycleMap04",
+		"CycleMap05",
+		"CycleMap06",
+		"CycleMap07",
+		"CycleMap08",
+		"CycleMap09"
+	};
 }
 
 enum RESOURCE_ID

@@ -5,6 +5,7 @@
 #include <vector>
 #include "GameData.h"
 #include "Enemy.h"
+#include "ParallaxBackground.h"
 
 class Control3 : public cocos2d::Layer
 {
@@ -20,7 +21,7 @@ public:
 	void removePopUp();
 	void npcWalk(bool directionRight, cocos2d::Sprite* subject);
 	void resourcePopup();
-	void setViewpoint(cocos2d::Vec2 position);
+	cocos2d::Vec2 setViewpoint(cocos2d::Vec2 position);
 	cocos2d::Vec2 convertToTilePosition(cocos2d::Vec2 position);
 	void simplePhysics(); //will go inside update
 	void playerAnimationCache();
@@ -135,6 +136,13 @@ private:
 		bool buildingDone;
 	};
 
+	//classes
+	//Enemy class
+	Enemy m_enemy;
+
+	//Parallax Background class
+	ParallaxBackground m_background;
+
 	cocos2d::Sprite* m_character;
 	cocos2d::Sprite* m_hpBar;
 	std::vector<cocos2d::Sprite*> m_npcVector;
@@ -154,6 +162,10 @@ private:
 
 	bool m_disableGame;
 
+	//game timer
+	float m_timeOfDay;
+	int m_frameCounter;
+
 	//Control related
 	cocos2d::Rect m_rightRect;
 	cocos2d::Rect m_leftRect;
@@ -168,11 +180,11 @@ private:
 	cocos2d::Node* m_gameNode;
 	cocos2d::Node* m_uiNode;
 	cocos2d::Node* m_temporaryNode;
+	cocos2d::Node* m_backgroundNode;
 	cocos2d::Node* m_skyNode;
+	cocos2d::Node* m_foregroundNode;
 
 	int m_talkingNPCIndex;
-
-	Enemy m_enemy;
 
 	//Sprite names
 	const std::string POPUP_SPRITE = "PopUp";

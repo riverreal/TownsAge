@@ -7,7 +7,7 @@
   <object id="2" name="NextRight" x="5918" y="896" width="34" height="32"/>
   <object id="34" name="Spawn" x="733.333" y="1048.48" width="69.697" height="57.5758"/>
   <object id="37" name="TimeMachine" x="2548" y="976" width="66" height="64"/>
-  <object id="38" name="Building" x="1506.67" y="1022.67" width="93.3333" height="102.667"/>
+  <object id="38" name="Building" x="1350.67" y="1022.67" width="93.3333" height="102.667"/>
  </objectgroup>
  <layer name="base" width="200" height="41">
   <data encoding="base64" compression="zlib">

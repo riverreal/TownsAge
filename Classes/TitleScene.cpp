@@ -75,15 +75,25 @@ bool TitlleScene::init()
     //this->addChild(label, 1);
 
 	UserDefault* def = UserDefault::getInstance();
-	//def->setIntegerForKey("AreaATM", 0);
-	def->setIntegerForKey("MapArea", 1);
+	def->setIntegerForKey("MapArea", 0);
 	def->setBoolForKey("FromRight", true);
 	for (int i = 0; i < 14; ++i)
 	{
-		def->setIntegerForKey(mapData::leftMap[i].c_str(), 2);
-		def->setIntegerForKey(mapData::rightMap[i].c_str(), 3);
+		def->setIntegerForKey(mapData::leftMap[i].c_str(), 1);
+		def->setIntegerForKey(mapData::rightMap[i].c_str(), 1);
 	}
-	def->setIntegerForKey(mapData::rightMap[1].c_str(), 2);
+
+	for (int i = 0; i < 10; ++i)
+	{
+		auto randomArea = RandomHelper::random_int(1, 1);
+		def->setIntegerForKey(mapData::cicleMap[i].c_str(), randomArea);
+	}
+
+	def->setIntegerForKey(mapData::cicleMap[0].c_str(), 0);
+
+	def->setBoolForKey("tutorial", true);
+	 
+	//def->setIntegerForKey(mapData::rightMap[2].c_str(), 3);
 
 	def->setIntegerForKey("inventorySlotType01", 0);
 	def->setIntegerForKey("inventorySlotType02", 0);
