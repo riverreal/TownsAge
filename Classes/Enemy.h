@@ -133,7 +133,7 @@ private:
 	std::vector<cocos2d::Sprite*> m_flyingEnemyVector;
 	std::vector<cocos2d::Sprite*> m_mineEnemyVector;
 
-	const std::string m_name[9] =
+	 std::string m_name[9]; /*= 
 	{
 		"bear",
 		"lizard",
@@ -144,9 +144,9 @@ private:
 		"frog",
 		"hippo",
 		"soldier"
-	};
+	};*/
 
-	const std::string m_path[9] =
+	 std::string m_path[9];/* =
 	{
 		"img/enemies/forest_bear.png",
 		"img/enemies/forest_lizard.png",
@@ -157,18 +157,7 @@ private:
 		"img/enemies/swamp_frog.png",
 		"img/enemies/swamp_hippo.png",
 		"img/enemies/soldier.png"
-	};
+	};*/
 
-	const cocos2d::Rect  m_bearIDLEFrames[1] = 
-	{
-		cocos2d::Rect(0, 0, 128, 128)
-	};
-
-	const cocos2d::Rect  m_bearBonusFrames[4] =
-	{
-		cocos2d::Rect(0, 0, 128, 128),
-		cocos2d::Rect(0, 0, 128, 128),
-		cocos2d::Rect(0, 0, 128, 128),
-		cocos2d::Rect(0, 0, 128, 128)
-	};
+	
 };

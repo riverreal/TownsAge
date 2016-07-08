@@ -1,6 +1,7 @@
 #include "TitleScene.h"
 #include "ControlTesting03.h"
 #include "GameData.h"
+#include "Option.h"
 
 USING_NS_CC;
 
@@ -133,74 +134,81 @@ bool TitlleScene::init()
 	controlMenu->setPosition(Vec2::ZERO);
 	//this->addChild(controlMenu);
 
-	char* messageTbl[] =
-	{
-		"  ",
-		"  ",
-		"  ",
-		"  "
+	
+	
 
-	};
-	//テーブルの要素数だけ回す　ボタン追加するなら数字も追加
-	for (int i = 0; i < 1; i++)
-	{	//どのボタンが何番でどこにあるのか
-		//偶数が右で奇数が左（ボタンの位置）
-		if (i % 2 == 0)
-		{
-			ButtonCreate("", i, Vec2(visibleSize.width / 2, visibleSize.height / 3.7 - 22 * (i)));
-		}
-		else
-		{
-			ButtonCreate(messageTbl[i], i, Vec2(visibleSize.width / 2 + 150, visibleSize.height / 2.5 * (i - 1)));
-		}
-	}
-
+	ButtonCreate();
+	
 	
 
     return true;
 }
 
-void TitlleScene::ButtonCreate(char* name, int num, Vec2 pos)
+void TitlleScene::ButtonCreate()
 {
-
-	auto button = ui::Button::create("img/ui/new.png");
-
-
-	auto tiltingFunc = CallFunc::create([button]() {
-		auto quickFadeIn = FadeIn::create(0.8f);
-		auto pause = DelayTime::create(1.0f);
-		auto quickFadeOut = FadeOut::create(0.8f);
-		auto shortPause = DelayTime::create(0.5f);
-		auto tilting = RepeatForever::create(Sequence::create(quickFadeOut, shortPause, quickFadeIn, pause, NULL));
-		button->runAction(tilting);
-	});
-
-	auto Delay = DelayTime::create(1.2f);
-	auto Fadein = FadeIn::create(1.0f);
-	auto Sequence = Sequence::create(Delay, Fadein, tiltingFunc, NULL);
-
+	Size visibleSize = Director::getInstance()->getVisibleSize();
+	//auto button = ui::Button::create("img/ui/new.png");
 	//ボタンの画像。仮画像
-	
-	//ポジション設定
-	button->setPosition(pos);
-	//9分割して引き伸ばし。文字がきれいに見える
-	button->setScale9Enabled(true);
-	//ラベル
-	button->setTitleText(name);
-	//フォントサイズ
-	button->setTitleFontSize(30);
-	//透明度
-	button->setOpacity(0);
-	//アクション
-	button->runAction(Sequence);
+	//配列
+	ui::Button* button[]
+	{
+		ui::Button::create("img/ui/new.png"),
+		ui::Button::create("img/ui/option.png"),
+		ui::Button::create("img/ui/new.png"),
+		ui::Button::create("img/ui/continue.png")
 
-	button->setName("new");
+	};
+	for (int i = 0; i < 4; i++)
+	{
 
-	this->addChild(button);
-	//タグ付
-	button->setTag(num);
-	//タッチを有効に
-	button->addTouchEventListener(CC_CALLBACK_2(TitlleScene::touchEvent, this));
+			/*
+			auto tiltingFunc = CallFunc::create([button]() 
+			{
+			auto quickFadeIn = FadeIn::create(0.8f);
+			auto pause = DelayTime::create(1.0f);
+			auto quickFadeOut = FadeOut::create(0.8f);
+			auto shortPause = DelayTime::create(0.5f);
+			auto tilting = RepeatForever::create(Sequence::create(quickFadeOut, shortPause, quickFadeIn, pause, NULL));
+			button->runAction(tilting);
+		});*/
+
+		auto Delay = DelayTime::create(1.2f);
+		auto Fadein = FadeIn::create(1.0f);
+		auto Sequence = Sequence::create(Delay, Fadein,/* tiltingFunc,*/ NULL);
+
+
+		//透明度
+		button[i]->setOpacity(0);
+		//アクション
+		button[i]->runAction(Sequence);
+
+		button[i]->setName("new");
+
+		this->addChild(button[i]);
+		//タグ付
+		button[i]->setTag(i);
+		
+		
+		//タッチを有効に
+		button[i]-> addTouchEventListener(CC_CALLBACK_2(TitlleScene::touchEvent, this));
+
+		//偶数が左で奇数が右（ボタンの位置）
+		if (i % 2 != 0)
+		{
+			button[i]->setPosition(Vec2(visibleSize.width / 1.5, visibleSize.height / 3.7 ));
+		}
+		else
+		{
+			button[i]->setPosition(Vec2(visibleSize.width / 2.5 , visibleSize.height / 3.7));
+		}
+		
+		if (i >= 2 )
+		{
+			button[i]->setVisible(false);
+		}
+		
+
+	}
 }
 
 void TitlleScene::menuCloseCallback(Ref* pSender)
@@ -250,19 +258,34 @@ void TitlleScene::touchEvent(Ref *pSender, cocos2d::ui::Widget::TouchEventType t
 		switch (tag)
 		{
 		case	0:
-			Director::getInstance()->replaceScene(Control3::createScene());
+			//始めるボタン
+			//押されたら以下を実行
+			for (int i = 0; i < 4; i++)
+			{
+				auto  button = this->getChildByTag(i);
+				//1以下のタグはフェードアウト＆ハイド
+				if (i <= 1)
+				{
+					button->runAction(Sequence::create(FadeOut::create(0.9f), Hide::create(), NULL));
+				}
+				//フェードインとshow
+				else if (i >= 2)
+				{
+					button->runAction(Sequence::create(FadeIn::create(0.8f),Show::create(), NULL));
+				}
+			}
+			//ここまで
 			break;
 		case	1:
-			//ゲーム画面に遷移
-			//Director::getInstance()->replaceScene(GameScene::createScene());
+			//オプション
+			Director::getInstance()->pushScene(Option::createScene());
 			break;
 		case	2:
-			//オプション画面に遷移
-			//Director::getInstance()->pushScene(Opsion::createScene());
+			//初めから
+			Director::getInstance()->replaceScene(Control3::createScene());
 			break;
 		case	3:
-			//ED一覧に遷移
-			//Director::getInstance()->replaceScene(Collection::createScene());
+			//続きから
 			break;
 
 		default:
@@ -277,9 +300,7 @@ void TitlleScene::touchEvent(Ref *pSender, cocos2d::ui::Widget::TouchEventType t
 	//タッチ終了
 }
 
-void TitlleScene::Action()
-{
-	//フェードインとかまとめてこっちで管理したい|дﾟ)
 
 
-}
+
+ 

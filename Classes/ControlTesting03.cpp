@@ -1,6 +1,7 @@
 #include "ControlTesting03.h"
 #include "TitleScene.h"
 #include "DamageHandler.h"
+#include "Option.h"
 #include <sstream>
 
 USING_NS_CC;
@@ -350,34 +351,91 @@ bool Control3::init()
 		spawnNPC(4);
 	}
 
+	
+	///////////////////////////////////////////////////////////////////////////////////////////////
+	_ButtonSwap = def->getBoolForKey("ButtonSwap");
+	//ここスティックに
 	auto leftButton = Sprite::create("img/dpad.png");
-	leftButton->setPosition(visibleSize.width / 10 * 1, visibleSize.height / 6);
-	leftButton->setScale(1.5);
+	leftButton->setPosition(visibleSize.width / 10 * 0.75, visibleSize.height / 6);
+	leftButton->setScaleX(6.5);
+	
 	leftButton->setRotation(-90);
-	leftButton->setOpacity(100);
+	leftButton->setOpacity(0);
 	m_uiNode->addChild(leftButton);
 
+	//処理は真ん中にストップボタンをつけて画像はスティックにすればそれっぽくなる。
+	auto StickBack = Sprite::create("img/ui/pad2.png");
+	StickBack->setPosition(visibleSize.width / 10 * 1.5, visibleSize.height / 6);
+	StickBack->setScale(1.5);
+	StickBack->setOpacity(def->getFloatForKey("button"));
+	m_uiNode->addChild(StickBack);
+
+	auto JoyStick = Sprite::create("img/ui/stick.png");
+	JoyStick->setPosition(visibleSize.width / 10 * 1.5, visibleSize.height / 6);
+	JoyStick->setScale(1.5);
+	JoyStick->setOpacity(def->getFloatForKey("button"));
+	JoyStick->setTag(JOYSTICK_SPRITE_NUM);
+	m_uiNode->addChild(JoyStick);
+	//ストップボタン
+	auto stopButton = Sprite::create("img/dpad.png");
+	stopButton->setPosition(visibleSize.width / 10 * 1.5, visibleSize.height / 6);
+	stopButton->setScaleY(6.5);
+	stopButton->setOpacity(0);
+	m_uiNode->addChild(stopButton);
+	/////////////////////////////
+
+
 	auto rightButton = Sprite::create("img/dpad.png");
-	rightButton->setPosition(visibleSize.width / 10 * 3, visibleSize.height / 6);
-	rightButton->setScale(1.5);
+	rightButton->setPosition(visibleSize.width / 10 * 2.25, visibleSize.height / 6);
+	rightButton->setScaleX(6.5);
 	rightButton->setRotation(90);
-	rightButton->setOpacity(100);
+	rightButton->setOpacity(0);
 	m_uiNode->addChild(rightButton);
+	
+		auto jButton = Sprite::create("img/ui/Jump.png");
+		if (_ButtonSwap == false)
+		{
+			jButton->setPosition(visibleSize.width / 10 * 7.3, visibleSize.height / 6);
+			jButton->setOpacity(def->getFloatForKey("button"));
+			jButton->setScale(0.35);
+			m_uiNode->addChild(jButton);
 
-	auto jButton = Sprite::create("img/ui/Jump.png");
-	jButton->setPosition(visibleSize.width / 10 * 7.3, visibleSize.height / 6);
-	jButton->setOpacity(100);
-	jButton->setScale(0.35);
-	m_uiNode->addChild(jButton);
+		}
+		else if (_ButtonSwap)
+		{
+			jButton->setPosition(visibleSize.width / 10 * 9, visibleSize.height / 4);
+			jButton->setOpacity(def->getFloatForKey("button"));
+			jButton->setScale(0.35);
+			m_uiNode->addChild(jButton);
 
-	auto aButton = Sprite::create("img/ui/Attack.png");
-	aButton->setPosition(visibleSize.width / 10 * 9, visibleSize.height / 4);
-	aButton->setOpacity(100);
-	aButton->setScale(0.35);
-	m_uiNode->addChild(aButton);
+		}
+		
+		auto aButton = Sprite::create("img/ui/Attack.png");
+		if (_ButtonSwap == false)
+		{
+			aButton->setPosition(visibleSize.width / 10 * 9, visibleSize.height / 4);
+			aButton->setOpacity(def->getFloatForKey("button"));
+			aButton->setScale(0.35);
+			m_uiNode->addChild(aButton);
+
+		}
+		else if (_ButtonSwap)
+		{
+			aButton->setPosition(visibleSize.width / 10 * 7.3, visibleSize.height / 6);
+			aButton->setOpacity(def->getFloatForKey("button"));
+			aButton->setScale(0.35);
+			m_uiNode->addChild(aButton);
+
+		}
+	
+	
+	
+	
 
 	m_rightRect = Rect(rightButton->getBoundingBox());
 	m_leftRect = Rect(leftButton->getBoundingBox());
+	m_JoyStick = Rect(JoyStick->getBoundingBox());
+	m_StopButton = Rect(stopButton->getBoundingBox());
 	m_jButtonRect = Rect(jButton->getBoundingBox());
 	m_aButtonRect = Rect(aButton->getBoundingBox());
 
@@ -1026,7 +1084,8 @@ void Control3::simplePhysics()
 					auto blink = Blink::create(3, 3);
 					auto hide = Hide::create();
 					arrow->runAction(Sequence::create(hide, delay, blink, hide, NULL));
-
+					
+					//チュートリアルで光らせるやつ
 					auto square1 = Sprite::create("img/dpadCover.png");
 					square1->setScale(1.6);
 					square1->setOpacity(150);
@@ -1040,7 +1099,8 @@ void Control3::simplePhysics()
 					square2->setPosition(m_leftRect.getMidX(), m_leftRect.getMidY());
 					square2->setName("LeftCover");
 					m_uiNode->addChild(square2);
-
+					//////あとでジョイスティック用に変える
+					
 					auto delay2 = DelayTime::create(0.7);
 					auto blink2 = Blink::create(3, 6);
 					auto hide2 = Hide::create();
@@ -2173,6 +2233,8 @@ void Control3::update(float dt)
 	}
 }
 
+
+///タッチ開始
 void Control3::onTouchesBegan(const std::vector<cocos2d::Touch*>& touch, cocos2d::Event* eventt)
 {
 	Size visibleSize = Director::getInstance()->getVisibleSize();
@@ -2200,6 +2262,15 @@ void Control3::onTouchesBegan(const std::vector<cocos2d::Touch*>& touch, cocos2d
 					m_directionRight = false;
 					m_standing = false;
 					m_animationInstanced = false;
+					m_moveTouchID = t->getID();
+				}
+			}
+			else if (touchPoint.intersectsRect(m_StopButton))
+			{
+				//if (!m_swinging)
+				{
+					m_standing = true;
+					//m_animationInstanced = false;
 					m_moveTouchID = t->getID();
 				}
 			}
@@ -2390,15 +2461,18 @@ void Control3::onTouchesBegan(const std::vector<cocos2d::Touch*>& touch, cocos2d
 void Control3::onTouchesMoved(const std::vector<cocos2d::Touch*>& touch, cocos2d::Event* eventt)
 {
 	Size visibleSize = Director::getInstance()->getVisibleSize();
+	
 
 	if (!m_disableGame)
 	{
 		for (auto &t : touch)
 		{
+			auto JoyStick = (Sprite*)m_uiNode->getChildByTag(JOYSTICK_SPRITE_NUM);
+			
 			Rect touchPoint = Rect(t->getLocation().x, t->getLocation().y, 2, 2);
 			if (touchPoint.intersectsRect(m_rightRect))
 			{
-				if (!m_directionRight)
+				//if (!m_directionRight)
 				{
 					//if (!m_swinging)
 					{
@@ -2407,12 +2481,14 @@ void Control3::onTouchesMoved(const std::vector<cocos2d::Touch*>& touch, cocos2d
 						m_standing = false;
 						m_animationInstanced = false;
 						m_moveTouchID = t->getID();
+						//ジョイスティックpos移動
+						JoyStick->setPosition(visibleSize.width / 10 * 1.8, visibleSize.height / 6);
 					}
 				}
 			}
 			else if (touchPoint.intersectsRect(m_leftRect))
 			{
-				if (m_directionRight)
+				//if (m_directionRight)
 				{
 					//if (!m_swinging)
 					{
@@ -2421,24 +2497,40 @@ void Control3::onTouchesMoved(const std::vector<cocos2d::Touch*>& touch, cocos2d
 						m_standing = false;
 						m_animationInstanced = false;
 						m_moveTouchID = t->getID();
+						//ジョイスティックpos移動
+						JoyStick->setPosition(visibleSize.width / 10 * 1.2, visibleSize.height / 6);
+
 					}
 				}
 			}
+			///ここにストップボタン追加
+			else if (touchPoint.intersectsRect(m_StopButton))
+			{
+				m_standing = true;
+				m_animationInstanced = false;
+				m_moveTouchID = -1;
+				//ジョイスティックpos移動
+				JoyStick->setPosition(visibleSize.width / 10 * 1.5, visibleSize.height / 6);
+			}
+
 		}
 	}
 }
 
 void Control3::onTouchesEnded(const std::vector<cocos2d::Touch*>& touch, cocos2d::Event* eventt)
 {
+	Size visibleSize = Director::getInstance()->getVisibleSize();
 	if (!m_disableGame)
 	{
 		for (auto &t : touch)
 		{
+			auto JoyStick = (Sprite*)m_uiNode->getChildByTag(JOYSTICK_SPRITE_NUM);
 			if (t->getID() == m_moveTouchID)
 			{
 				m_standing = true;
 				m_animationInstanced = false;
 				m_moveTouchID = -1;
+				JoyStick->setPosition(visibleSize.width / 10 * 1.5, visibleSize.height / 6);
 			}
 			if (t->getID() == m_jumpTouchID)
 			{

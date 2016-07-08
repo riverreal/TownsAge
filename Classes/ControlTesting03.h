@@ -169,6 +169,8 @@ private:
 	//Control related
 	cocos2d::Rect m_rightRect;
 	cocos2d::Rect m_leftRect;
+	cocos2d::Rect m_JoyStick;
+	cocos2d::Rect m_StopButton;
 	bool m_aButtonPressed;
 	bool m_jButtonPressed;
 	cocos2d::Rect m_aButtonRect;
@@ -195,6 +197,8 @@ private:
 	const std::string RESOURCE_3 = "Res3";
 	const std::string RESOURCE_COUNT_3 = "ResCount3";
 	const std::string HOUSE_ICON_SPRITE = "HouseIcon";
+
+	const int JOYSTICK_SPRITE_NUM = 88;
 
 	//---------------------
 	//----physics variables/constants
@@ -240,6 +244,9 @@ private:
 	bool m_stepDone;
 	int m_step;
 	bool m_inTimeMachine;
+
+	//ボタン配置、サイズ関係置き場
+	bool _ButtonSwap;
 
 	PlayerInventory m_inventorySlot[10];
 };
