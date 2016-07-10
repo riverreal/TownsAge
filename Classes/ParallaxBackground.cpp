@@ -12,13 +12,17 @@ ParallaxBackground::~ParallaxBackground()
 {
 }
 
-void ParallaxBackground::Init(Vec2 initialPos, float currentTime, float visibleSizeX, Node* gameNode)
+void ParallaxBackground::Init(Vec2 initialPos, float currentTime, Size visibleSize, Node* gameNode, int maxDayTime, int cloudDensity, float maxMapWidth)
 {
+	m_maxDayTime = maxDayTime;
+	m_cloudDensity = Clamp(cloudDensity, 5, 0);
 	m_isParallaxBG = false;
-	m_visibleSizeX = visibleSizeX;
+	m_visibleSizeX = visibleSize.width;
+	m_visibleSizeY = visibleSize.height;
 	m_initialPosition = initialPos;
 	m_backgroundNode = Node::create();
 	m_skyNode = Node::create();
+	m_maxMapWidth = maxMapWidth;
 
 	//Sky init ---------------------
 	m_skyGradient = LayerGradient::create(GetSkyColorTopByTime(currentTime), GetSkyColorBottomByTime(currentTime), Vec2(0, -1));
@@ -26,47 +30,54 @@ void ParallaxBackground::Init(Vec2 initialPos, float currentTime, float visibleS
 
 	//Sun/Moon init
 	m_sun = Sprite::create("img/bg/sun.png");
-
-	auto x = (visibleSizeX * 0.5f) + cosf(GetAngleByTime(currentTime, true)) * RADIUS;
+	auto x = (m_visibleSizeX * 0.5f) + cosf(GetAngleByTime(currentTime, true)) * RADIUS;
 	auto y = sinf(GetAngleByTime(currentTime, true)) * RADIUS;
 	m_sun->setPosition(x, y);
+	m_sun->setZOrder(100);
 	m_skyNode->addChild(m_sun);
 
 	m_moon = Sprite::create("img/bg/moon.png");
-
-	auto x2 = (visibleSizeX * 0.5f) + cosf(GetAngleByTime(currentTime, false)) * RADIUS;
+	auto x2 = (m_visibleSizeX * 0.5f) + cosf(GetAngleByTime(currentTime, false)) * RADIUS;
 	auto y2 = sinf(GetAngleByTime(currentTime, false)) * RADIUS;
 	m_moon->setPosition(x2, y2);
+	m_moon->setZOrder(100);
 	m_skyNode->addChild(m_moon);
 
-	//Shading ----------------------
-	//gameNodeCopy as the stencil for the clipping mask
-	//m_gameNodeCopy = (Sprite*)gameNode;
-	
-	//create clipper with gameNode as stencil
-	//m_shadeClipping = ClippingNode::create(m_gameNodeCopy);
+	//Stars init
+	m_stars = Sprite::create("img/bg/stars.png");
+	auto x3 = m_visibleSizeX * 0.5f;
+	m_stars->setScale(3.2f);
+	m_stars->setPositionX(x3);
+	m_skyNode->addChild(m_stars);
 
-	m_nightShade = LayerColor::create(Color4B(0, 0, 0, GetShadeAlphaByTime(currentTime)));
-	//m_shadeClipping->addChild(m_nightShade);
+	m_nightShade = LayerColor::create(Color4B(0, 0, 25, GetShadeAlphaByTime(currentTime, false)));
+
+	InitClouds();
 }
 
-void ParallaxBackground::AddParallaxLayer(string filePath, float scrollVel, Vec2 initialPos, float scale)
+void ParallaxBackground::AddParallaxLayer(string filePath, float scrollVel, Vec2 initialPos, float scale, int depthLevel)
 {
 	m_isParallaxBG = true;
 
 	//Create Sprite
 	auto sprite = Sprite::create(filePath);
-	auto newScale = scale * 0.7;
+	auto newScale = scale;
 	sprite->setPosition(Vec2(initialPos.x * scale, initialPos.y * scale));
 	sprite->setScale(newScale);
-	m_backgroundNode->addChild(sprite);
+
+	auto bgNode = Node::create();
+	bgNode->addChild(sprite);
+	bgNode->setTag(depthLevel);
+	bgNode->setZOrder(-depthLevel * 100);
+	bgNode->setCascadeColorEnabled(true);
+	m_backgroundNode->addChild(bgNode);
 
 	//Store data
-	auto bgData = BackgroundData();
+	auto bgData = BackgroundData(scrollVel);
 	bgData.scrollVel = scrollVel;
 
 	//Assign in respective vectors
-	m_backgroundVector.push_back(sprite);
+	m_backgroundVector.push_back(bgNode);
 	m_backgroundDataVector.push_back(bgData);
 }
 
@@ -74,17 +85,8 @@ void ParallaxBackground::UpdateBackground(Vec2 cameraPos, int timeOfDay)
 {
 	UpdateSky(timeOfDay);
 	UpdateSunMoon(timeOfDay);
-
-	if (m_isParallaxBG)
-	{
-		for (int i = 0; i < m_backgroundDataVector.size(); ++i)
-		{
-			if (m_backgroundNode != NULL)
-			{
-				m_backgroundNode->setPosition(Vec2(cameraPos.x * m_backgroundDataVector[0].scrollVel, cameraPos.y * m_backgroundDataVector[0].scrollVel));	
-			}
-		}
-	}
+	UpdateParallaxBG(timeOfDay, cameraPos);
+	UpdateClouds(timeOfDay, cameraPos);
 }
 
 Node * ParallaxBackground::GetBackgroundNode()
@@ -122,6 +124,163 @@ float ParallaxBackground::Clamp(float toClamp, float maxValue, float minValue)
 	return firstResult >= minValue ? firstResult : minValue;
 }
 
+void ParallaxBackground::InitClouds()
+{
+	//Initializes cloud nodes
+	m_cloudNodeNear = Node::create();
+	m_cloudNodeNear->setZOrder(-210);
+	m_cloudNodeNear->setCascadeColorEnabled(true);
+	m_cloudNodeNear->setCascadeOpacityEnabled(true);
+	m_backgroundNode->addChild(m_cloudNodeNear);
+
+	m_cloudNodeMiddle = Node::create();
+	m_cloudNodeMiddle->setZOrder(-220);
+	m_cloudNodeMiddle->setCascadeColorEnabled(true);
+	m_cloudNodeMiddle->setCascadeOpacityEnabled(true);
+	m_backgroundNode->addChild(m_cloudNodeMiddle);
+
+	m_cloudNodeFar = Node::create();
+	m_cloudNodeFar->setZOrder(-302);
+	m_cloudNodeFar->setCascadeColorEnabled(true);
+	m_cloudNodeFar->setCascadeOpacityEnabled(true);
+	m_backgroundNode->addChild(m_cloudNodeFar);
+
+	//---------------------------------------------------------
+	//Create cloud sprites depending on the density (m_cloudDensity) x**2
+	m_cloudNumber = m_cloudDensity * m_cloudDensity;
+
+	//Create them for the first time.
+	ResetCloudParameters();
+
+	m_cloudNodeNear->setOpacity(255);
+	m_cloudNodeMiddle->setOpacity(255);
+	m_cloudNodeFar->setOpacity(255);
+}
+
+void ParallaxBackground::ResetCloudParameters()
+{
+	m_cloudSpriteVector.clear();
+
+	m_cloudNodeNear->removeAllChildren();
+	m_cloudNodeMiddle->removeAllChildren();
+	m_cloudNodeFar->removeAllChildren();
+
+	m_cloudNodeNear->setOpacity(0);
+	m_cloudNodeMiddle->setOpacity(0);
+	m_cloudNodeFar->setOpacity(0);
+
+	//cloud number is the power of cloud density.
+	m_cloudNumber = 2 * m_cloudDensity * m_cloudDensity;
+
+	for (int i = 0; i < m_cloudNumber; ++i)
+	{
+		//------------------------------------------------------------
+		//    Near clouds
+		//------------------------------------------------------------
+		float sizeX = RandomHelper::random_int(-2, 10);
+		sizeX = (sizeX / 10.0f) + 1.3f + (m_cloudDensity * 2) / 5;//set random number as the decimal of the size.
+
+		float sizeY = RandomHelper::random_int(-2, 6);
+		sizeY = (sizeY / 10.0f) + 1.0f + (m_cloudDensity * 2) / 5; //set random number as the decimal of the size.
+
+		//place clouds in a set place with a little deviation.
+		float x = (m_maxMapWidth / m_cloudNumber) * i;
+		x += RandomHelper::random_int(-100, 100);
+		//y for near clouds. with deviation.
+		float y = (m_visibleSizeY * 0.9f) + RandomHelper::random_int(-50, 150);
+
+		//Generate Random Cloud Type from cloud file paths
+		int cloudType = RandomHelper::random_int(0, 4);
+		auto sprite = Sprite::create(m_cloudPathList[cloudType]);
+		sprite->setPosition(x, y);
+		sprite->setScaleX(sizeX);
+		sprite->setScaleY(sizeY);
+		sprite->setName(CLOUD_LEVEL_NEAR);
+		sprite->setZOrder(-10);
+		//sprite->setOpacity(240);
+		m_cloudNodeNear->addChild(sprite);
+
+		m_cloudSpriteVector.push_back(sprite);
+
+		//------------------------------------------------------------
+		//    Middle clouds
+		//------------------------------------------------------------
+		sizeX = RandomHelper::random_int(-2, 3);
+		sizeX = (sizeX / 10.0f) + 1.0f + (m_cloudDensity * 1.5f) / 5; //set random number as the decimal of the size.
+
+		sizeY = RandomHelper::random_int(-2, 3);
+		sizeY = (sizeY / 10.0f) + 0.8f + (m_cloudDensity * 1.5f) / 5; //set random number as the decimal of the size.
+
+		//place clouds in a set place with a little deviation.
+		x = ((m_maxMapWidth * 0.8f) / m_cloudNumber) * i;
+		x += RandomHelper::random_int(-130, 130);
+		//y for near clouds. with deviation.
+		y = (m_visibleSizeY * 0.76f) + RandomHelper::random_int(-40, 40);
+
+		//Generate Random Cloud Type from cloud file paths
+		cloudType = RandomHelper::random_int(0, 4);
+		sprite = Sprite::create(m_cloudPathList[cloudType]);
+		sprite->setPosition(x, y);
+		sprite->setScaleX(sizeX);
+		sprite->setScaleY(sizeY);
+		sprite->setZOrder(-20);
+		sprite->setColor(Color3B(200, 200, 200));
+		sprite->setName(CLOUD_LEVEL_MIDDLE);
+		sprite->setOpacity(230);
+
+		//25% chance to miss (to be ignored, not created)
+		auto missingChance = RandomHelper::random_int(0, 4);
+		if (missingChance == 0)
+		{
+			sprite->setVisible(false);
+		}
+		else
+		{
+			m_cloudNodeMiddle->addChild(sprite);
+			m_cloudSpriteVector.push_back(sprite);
+		}
+		
+		//------------------------------------------------------------
+		//    Far clouds
+		//------------------------------------------------------------
+		sizeX = RandomHelper::random_int(-3, 3);
+		sizeX = (sizeX / 10.0f) + 0.8f + (m_cloudDensity * 1) / 5; //set random number as the decimal of the size.
+
+		sizeY = RandomHelper::random_int(-1, 2);
+		sizeY = (sizeY / 10.0f) + 0.4f + (m_cloudDensity * 1) / 5; //set random number as the decimal of the size.
+
+		//place clouds in a set place with a little deviation.
+		x = ((m_maxMapWidth * 0.5f) / m_cloudNumber) * i;
+		x += RandomHelper::random_int(-80, 80);
+		//y for near clouds. with deviation.
+		y = (m_visibleSizeY * 0.63f) + RandomHelper::random_int(-10, 10);
+
+		//Generate Random Cloud Type from cloud file paths
+		cloudType = RandomHelper::random_int(0, 4);
+		sprite = Sprite::create(m_cloudPathList[cloudType]);
+		sprite->setPosition(x, y);
+		sprite->setScaleX(sizeX);
+		sprite->setScaleY(sizeY);
+		sprite->setZOrder(-30);
+		sprite->setName(CLOUD_LEVEL_FAR);
+		sprite->setColor(Color3B(150, 150, 150));
+		sprite->setOpacity(200);
+
+		//50% chance to miss (to be ignored; not created)
+		missingChance = RandomHelper::random_int(0, 1);
+
+		if (missingChance == 0)
+		{
+			sprite->setVisible(false);
+		}
+		else
+		{
+			m_cloudNodeFar->addChild(sprite);
+			m_cloudSpriteVector.push_back(sprite);
+		}
+	}
+}
+
 void ParallaxBackground::UpdateSky(int timeOfDay)
 {
 	//skycolor update
@@ -130,8 +289,14 @@ void ParallaxBackground::UpdateSky(int timeOfDay)
 	m_skyGradient->setStartColor(Color3B(startColor.r, startColor.g, startColor.b));
 	m_skyGradient->setEndColor(Color3B(endColor.r, endColor.g, endColor.b));
 
+	//stars update
+	m_stars->setOpacity(GetShadeAlphaByTime(timeOfDay, true));
+	static float s_angle = 0;
+	s_angle+= 0.005f;
+	m_stars->setRotation(s_angle);
+
 	//shade update
-	m_nightShade->setOpacity(GetShadeAlphaByTime(timeOfDay));
+	m_nightShade->setOpacity(GetShadeAlphaByTime(timeOfDay, false));
 }
 
 void ParallaxBackground::UpdateSunMoon(int timeOfDay)
@@ -143,6 +308,107 @@ void ParallaxBackground::UpdateSunMoon(int timeOfDay)
 	auto x2 = (m_visibleSizeX * 0.5f) + cosf(GetAngleByTime(timeOfDay, false)) * RADIUS;
 	auto y2 = sinf(GetAngleByTime(timeOfDay, false)) * RADIUS;
 	m_moon->setPosition(x2, y2);
+}
+
+void ParallaxBackground::UpdateClouds(int timeOfDay, Vec2 cameraPos)
+{
+	auto cloudShade = GetShadeAlphaByTime(timeOfDay, true);
+	cloudShade = Clamp(cloudShade, 255, 0);
+
+	static float nearCloudMovingOffset = 0;
+	nearCloudMovingOffset += 0.215f;
+	
+	m_cloudNodeNear->setPosition(Vec2((cameraPos.x * 0.3f) - nearCloudMovingOffset, cameraPos.y * 0.1f));
+	auto nearShade = Clamp((255 - cloudShade) + 120.0f, 255, 0);
+	m_cloudNodeNear->setColor(Color3B(nearShade, nearShade, nearShade));
+
+	static float middleCloudMovingOffset = 0;
+	middleCloudMovingOffset += 0.1f;
+
+	auto middleShade = Clamp((255 - cloudShade) + 80.0f, 255, 0);
+	m_cloudNodeMiddle->setPosition(Vec2((cameraPos.x * 0.2f) - middleCloudMovingOffset, cameraPos.y * 0.06f));
+	m_cloudNodeMiddle->setColor(Color3B(middleShade, middleShade, middleShade));
+
+	static float farCloudMovingOffset = 0;
+	farCloudMovingOffset += 0.05f;
+
+	auto farShade = Clamp((255 - cloudShade) + 40.0f, 255, 0);
+	m_cloudNodeFar->setPosition(Vec2((cameraPos.x * 0.1f) - farCloudMovingOffset, cameraPos.y * 0.005));
+	m_cloudNodeFar->setColor(Color3B(farShade, farShade, farShade));
+
+	if (nearCloudMovingOffset >= 1000)
+	{
+		static bool fadedOnce = false;
+
+		if (!fadedOnce)
+		{
+			auto fadeOutNear = FadeOut::create(1.0f);
+			auto fadeOutMid = FadeOut::create(2.0f);
+			auto fadeOutFar = FadeOut::create(3.0f);
+
+			m_cloudNodeNear->runAction(fadeOutNear);
+			m_cloudNodeMiddle->runAction(fadeOutMid);
+			m_cloudNodeFar->runAction(fadeOutFar);
+
+			fadedOnce = true;
+		}
+
+		if (nearCloudMovingOffset >= 1040)
+		{
+			m_cloudDensity = RandomHelper::random_int(1, 5);
+			ResetCloudParameters();
+
+			auto fadeInNear = FadeIn::create(1.0f);
+			auto fadeInMid = FadeIn::create(2.0f);
+			auto fadeInFar = FadeIn::create(3.0f);
+
+			m_cloudNodeNear->runAction(fadeInNear);
+			m_cloudNodeMiddle->runAction(fadeInMid);
+			m_cloudNodeFar->runAction(fadeInFar);
+
+			fadedOnce = false;
+
+			nearCloudMovingOffset = 0;
+			middleCloudMovingOffset = 0;
+			farCloudMovingOffset = 0;
+		}
+		
+	}
+}
+
+void ParallaxBackground::UpdateParallaxBG(int timeOfDay, cocos2d::Vec2 cameraPos)
+{
+	if (m_isParallaxBG)
+	{
+		for (int i = 0; i < m_backgroundDataVector.size(); ++i)
+		{
+			m_backgroundVector[i]->setPosition(Vec2(cameraPos.x * m_backgroundDataVector[i].scrollVel, cameraPos.y * m_backgroundDataVector[i].scrollVel));
+
+			if (m_backgroundVector[i]->getTag() >= DEPTH_LEVEL_BACKGROUND)
+			{
+				m_backgroundVector[i]->setPosition(Vec2(cameraPos.x * m_backgroundDataVector[i].scrollVel, 0));
+			}
+
+
+			float blacknessLevel = GetShadeAlphaByTime(timeOfDay, true);
+			switch (m_backgroundVector[i]->getTag())
+			{
+			case DEPTH_LEVEL_NEAR:
+				blacknessLevel -= 120.0f;
+				break;
+			case DEPTH_LEVEL_MIDDLE:
+				blacknessLevel -= 80.0f;
+				break;
+			case DEPTH_LEVEL_FAR:
+				blacknessLevel -= 40.0f;
+				break;
+			default:
+				break;
+			}
+			blacknessLevel = Clamp(blacknessLevel, 255, 0);
+			m_backgroundVector[i]->setColor(Color3B(255 - blacknessLevel, 255 - blacknessLevel, 255 - blacknessLevel));
+		}
+	}
 }
 
 cocos2d::Color4B ParallaxBackground::GetSkyColorTopByTime(float timeOfDay)
@@ -159,7 +425,7 @@ cocos2d::Color4B ParallaxBackground::GetSkyColorTopByTime(float timeOfDay)
 		Color4B(1, 10, 16, 255), Color4B(9, 4, 1, 255), Color4B(0, 0, 12, 255)
 	};
 
-	auto step = MAX_DAY_TIME / 24;
+	auto step = m_maxDayTime / 24;
 	
 	int index = (timeOfDay / step);
 	Color4B previousColor = topColorList[index];
@@ -194,7 +460,7 @@ cocos2d::Color4B ParallaxBackground::GetSkyColorBottomByTime(float timeOfDay)
 		Color4B(89, 35, 11, 255), Color4B(75, 29, 6, 255), Color4B(21, 8, 0, 255)
 	};
 
-	auto step = MAX_DAY_TIME / 24;
+	auto step = m_maxDayTime / 24;
 
 	int index = (timeOfDay / step);
 	Color4B previousColor = bottomColorList[index];
@@ -232,43 +498,67 @@ float ParallaxBackground::GetAngleByTime(float timeOfDay, bool sun)
 
 	if (sun)
 	{
-		angle = -((((360 * timeOfDay) / MAX_DAY_TIME) * (PI / 180)) + (PI / 2));
+		angle = -((((360 * timeOfDay) / m_maxDayTime) * (PI / 180)) + (PI / 2));
 	}
 	else
 	{
-		angle = -((((360 * timeOfDay) / MAX_DAY_TIME) * (PI / 180) - (PI / 2)));
+		angle = -((((360 * timeOfDay) / m_maxDayTime) * (PI / 180) - (PI / 2)));
 	}
 
 	return angle;
 }
 
-float ParallaxBackground::GetShadeAlphaByTime(float timeOfDay)
+float ParallaxBackground::GetShadeAlphaByTime(float timeOfDay, bool stars)
 {	
 	//from 0 to 255 (255 being black)
 	float shadeLevel = 0;
-	float darkestValue = 140;
+	//255 for the stars, 100 for the shading
+	float darkestValue = stars ? 255 : 120;
 
 	auto realShadeTime = timeOfDay;
-	auto step = MAX_DAY_TIME / 24;
+	auto step = m_maxDayTime / 24;
 	//determine hour (24 hour) for convinience
 	float hour = (realShadeTime/ step);
 	
-	//not dark hours
-	if (hour >= 3 && hour <= 21)
+	if (stars)
 	{
-		float interpolatingValue = 12 / hour;
-		if (hour > 12)
+		if (hour >= 18)
 		{
-			interpolatingValue = 12 / (24 - hour);
+			shadeLevel = 255 - Interpolate(18, hour, 24, darkestValue, 0);
 		}
-
-		shadeLevel = 255 - Interpolate(1, interpolatingValue, 4, darkestValue, 0);
+		else if (hour <= 6)
+		{
+			shadeLevel = 255 - Interpolate(6, hour, 0, darkestValue, 0);
+		}
+		else
+		{
+			shadeLevel = 0;
+		}
 	}
-	//dark hours
 	else
 	{
-		shadeLevel = darkestValue;
+		auto cloudContribution = m_cloudDensity * 10.0f;
+
+		//not dark hours
+		if (hour >= 3 && hour <= 21)
+		{
+			float interpolatingValue = 12 / hour;
+			if (hour > 12)
+			{
+				interpolatingValue = 12 / (24 - hour);
+			}
+
+			shadeLevel = 255 - Interpolate(1, interpolatingValue, 4, darkestValue, 0);
+			shadeLevel -= 135.0f;
+			shadeLevel += cloudContribution;
+		}
+		//dark hours
+		else
+		{
+			shadeLevel = darkestValue + cloudContribution;
+		}
 	}
 
-	return Clamp(shadeLevel, darkestValue, 0);
+	//return the clamped value (clamp to color values: 255 - 0)
+	return Clamp(shadeLevel, 255, 0);
 }

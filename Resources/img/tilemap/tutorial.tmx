@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<map version="1.0" orientation="orthogonal" renderorder="right-up" width="200" height="41" tilewidth="32" tileheight="32" nextobjectid="40">
+<map version="1.0" orientation="orthogonal" renderorder="right-up" width="200" height="41" tilewidth="32" tileheight="32" nextobjectid="46">
  <tileset firstgid="1" name="Forest_sprite" tilewidth="32" tileheight="32" tilecount="128" columns="16">
   <image source="Forest_sprite.png" width="512" height="256"/>
   <terraintypes>
@@ -35,12 +35,12 @@
  <tileset firstgid="129" name="forest_tilemap_withTrees" tilewidth="32" tileheight="32" tilecount="900" columns="30">
   <image source="forest_tilemap_withTrees.png" width="960" height="960"/>
  </tileset>
- <layer name="bg02" width="200" height="41">
+ <layer name="bg02" width="200" height="41" visible="0">
   <data encoding="base64" compression="zlib">
    eJztzsdxAkEARNFZLpA6niyEzwIjkwXCLFHQx41AQ6neq/qXPnUpAAAAAAAAAAAAAAAAAAAAAAAAAMBfmKZZmqdFZx+mURqnSYVf8A42aZt2ad/ZP9IyrdK6wi9om1KeTd0Pn+krfaefzn5Ix3RK5wq/oN8rZdCr++GeHqlNz85+Sb/pmm4VfgEAAAAAAAAAAPB/vQDZ5xkZ
   </data>
  </layer>
- <layer name="bg01" width="200" height="41">
+ <layer name="bg01" width="200" height="41" visible="0">
   <data encoding="base64" compression="zlib">
    eJzt10dSVUEYQGEuKsYdCKKY3QFKEAO4A8Ac2QEiKEnYgIKCCihsQIy7UILuQgk6VzgMKLq6aHj1eBOqzld1Brf772bSb0BRkSRJkiRJkiRJkiRJkiRJkiRJkiRJkiRJkiRJ0vb2j/7T0spHltuZjLli2kE7ozO7+C6h3bQnx/v2MreP9tOBxJl87pW26iBvrZTK6FCO766cucN0hCqiM0f5PkbH6USO951k7hSdpjOJM/ncK21VJW/tLJ2jqujdPaPnNECDwXo1czVUS+ejM3V8X6CLdCnae0EvaYiGg/XLzNVTA11JvP343tRdUiE18taaqJmuRm/zPU3SB/oYrF9j7jrdoJvRmVt836Y7dDfa+0Sf6Qt9DdbvMXefHlBL4vcR35u6SyqkVt7aQ2qjR9Hb/EbfaYqmg/V25jroMT2JznTy3UXd1BPtzdAs/aCfwXovc0+pj/oTv4/43tRdUj6meFPT67y9AdYGs/X3f9FvmqN5mmF/loZomF7R6+DM6v4IjWZr36sWaJH+0N/g77xl5h2N00Ti9/EmuHcsS98l5WOONzW/wf+1m+2vWGB/cYOZeH+zeUmSJEmSJEmSJEmSJEmFtQx5IVx4
   </data>
@@ -87,7 +87,7 @@
  <objectgroup name="collectable">
   <object id="25" name="tree1" x="3057" y="832" width="96" height="98"/>
   <object id="28" name="tree2" x="3477" y="832" width="96" height="98"/>
-  <object id="29" name="tree3" x="3720" y="832" width="96" height="98"/>
+  <object id="29" name="tree5" x="3720" y="832" width="96" height="98"/>
   <object id="30" name="appletree" x="4171" y="832" width="96" height="98"/>
   <object id="37" name="tree4" x="3301" y="832" width="96" height="98"/>
   <object id="38" name="engine" x="4714.33" y="755" width="75.3333" height="64.6667"/>
@@ -100,6 +100,10 @@
   </object>
  </objectgroup>
  <objectgroup name="bg">
-  <object id="39" name="forest" x="3166.33" y="761" width="120" height="108"/>
+  <object id="39" name="forest01" x="3199" y="682.667" width="120" height="108"/>
+  <object id="40" name="forest02" x="3421.33" y="648.333" width="124" height="117.333"/>
+  <object id="42" name="montain01" x="888" y="828" width="148" height="160"/>
+  <object id="43" name="montain02" x="794.667" y="836" width="168" height="152"/>
+  <object id="44" name="montain03" x="728" y="872" width="208" height="148"/>
  </objectgroup>
 </map>

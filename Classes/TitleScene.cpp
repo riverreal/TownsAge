@@ -133,14 +133,8 @@ bool TitlleScene::init()
 	auto controlMenu = Menu::create(control3, NULL);
 	controlMenu->setPosition(Vec2::ZERO);
 	//this->addChild(controlMenu);
-
-	
-	
-
 	ButtonCreate();
 	
-	
-
     return true;
 }
 

@@ -50,6 +50,7 @@ bool Control3::init()
 	m_stepDone = true;
 	m_inTimeMachine = false;
 
+	//initial time of the day
 	m_timeOfDay = 0;
 	m_frameCounter = 0;
 
@@ -384,7 +385,6 @@ bool Control3::init()
 	m_uiNode->addChild(stopButton);
 	/////////////////////////////
 
-
 	auto rightButton = Sprite::create("img/dpad.png");
 	rightButton->setPosition(visibleSize.width / 10 * 2.25, visibleSize.height / 6);
 	rightButton->setScaleX(6.5);
@@ -392,45 +392,41 @@ bool Control3::init()
 	rightButton->setOpacity(0);
 	m_uiNode->addChild(rightButton);
 	
-		auto jButton = Sprite::create("img/ui/Jump.png");
-		if (_ButtonSwap == false)
-		{
-			jButton->setPosition(visibleSize.width / 10 * 7.3, visibleSize.height / 6);
-			jButton->setOpacity(def->getFloatForKey("button"));
-			jButton->setScale(0.35);
-			m_uiNode->addChild(jButton);
+	auto jButton = Sprite::create("img/ui/Jump.png");
+	if (_ButtonSwap == false)
+	{
+		jButton->setPosition(visibleSize.width / 10 * 7.3, visibleSize.height / 6);
+		jButton->setOpacity(def->getFloatForKey("button"));
+		jButton->setScale(0.35);
+		m_uiNode->addChild(jButton);
 
-		}
-		else if (_ButtonSwap)
-		{
-			jButton->setPosition(visibleSize.width / 10 * 9, visibleSize.height / 4);
-			jButton->setOpacity(def->getFloatForKey("button"));
-			jButton->setScale(0.35);
-			m_uiNode->addChild(jButton);
+	}
+	else if (_ButtonSwap)
+	{
+		jButton->setPosition(visibleSize.width / 10 * 9, visibleSize.height / 4);
+		jButton->setOpacity(def->getFloatForKey("button"));
+		jButton->setScale(0.35);
+		m_uiNode->addChild(jButton);
 
-		}
+	}
 		
-		auto aButton = Sprite::create("img/ui/Attack.png");
-		if (_ButtonSwap == false)
-		{
-			aButton->setPosition(visibleSize.width / 10 * 9, visibleSize.height / 4);
-			aButton->setOpacity(def->getFloatForKey("button"));
-			aButton->setScale(0.35);
-			m_uiNode->addChild(aButton);
+	auto aButton = Sprite::create("img/ui/Attack.png");
+	if (_ButtonSwap == false)
+	{
+		aButton->setPosition(visibleSize.width / 10 * 9, visibleSize.height / 4);
+		aButton->setOpacity(def->getFloatForKey("button"));
+		aButton->setScale(0.35);
+		m_uiNode->addChild(aButton);
 
-		}
-		else if (_ButtonSwap)
-		{
-			aButton->setPosition(visibleSize.width / 10 * 7.3, visibleSize.height / 6);
-			aButton->setOpacity(def->getFloatForKey("button"));
-			aButton->setScale(0.35);
-			m_uiNode->addChild(aButton);
+	}
+	else if (_ButtonSwap)
+	{
+		aButton->setPosition(visibleSize.width / 10 * 7.3, visibleSize.height / 6);
+		aButton->setOpacity(def->getFloatForKey("button"));
+		aButton->setScale(0.35);
+		m_uiNode->addChild(aButton);
 
-		}
-	
-	
-	
-	
+	}
 
 	m_rightRect = Rect(rightButton->getBoundingBox());
 	m_leftRect = Rect(leftButton->getBoundingBox());
@@ -473,7 +469,7 @@ bool Control3::init()
 	m_enemy.InitEnemies(m_gameNode);
 
 	//Background
-	m_background.Init(m_character->getPosition(), m_timeOfDay, visibleSize.width, m_gameNode);
+	m_background.Init(m_character->getPosition(), m_timeOfDay, visibleSize, m_gameNode, MAX_TIME_DAY, 3, rightArrowX + 200);
 
 	auto backgroundGroup = m_tilemap->getObjectGroup("bg");
 	if (backgroundGroup)
@@ -481,10 +477,30 @@ bool Control3::init()
 		auto backgroundVector = backgroundGroup->getObjects();
 		for (auto &bg : backgroundVector)
 		{
-			if (bg.asValueMap()["name"].asString() == "forest")
+			if (bg.asValueMap()["name"].asString() == "forest01")
 			{
 				auto bgPos = Vec2(bg.asValueMap()["x"].asFloat(), bg.asValueMap()["y"].asFloat());
-				m_background.AddParallaxLayer("img/bg/forest_bg01.png", 0.82f, bgPos, m_gameNode->getScale());
+				m_background.AddParallaxLayer("img/bg/forest_bg01.png", 0.82f, bgPos, m_gameNode->getScale(), 2);
+			}
+			else if (bg.asValueMap()["name"].asString() == "forest02")
+			{
+				auto bgPos = Vec2(bg.asValueMap()["x"].asFloat(), bg.asValueMap()["y"].asFloat());
+				m_background.AddParallaxLayer("img/bg/forest_bg02.png", 0.91f, bgPos, m_gameNode->getScale(), 1);
+			}
+			else if(bg.asValueMap()["name"].asString() == "montain01")
+			{
+				auto bgPos = Vec2(bg.asValueMap()["x"].asFloat(), bg.asValueMap()["y"].asFloat());
+				m_background.AddParallaxLayer("img/bg/staticBG_forest01.png", 0.2f, bgPos, m_gameNode->getScale() * 1.4f, m_background.DEPTH_LEVEL_BACKGROUND);
+			}
+			else if (bg.asValueMap()["name"].asString() == "montain02")
+			{
+				auto bgPos = Vec2(bg.asValueMap()["x"].asFloat(), bg.asValueMap()["y"].asFloat());
+				m_background.AddParallaxLayer("img/bg/staticBG_forest02.png", 0.11f, bgPos, m_gameNode->getScale() * 1.2f, m_background.DEPTH_LEVEL_BACKGROUND + 1);
+			}
+			else if (bg.asValueMap()["name"].asString() == "montain03")
+			{
+				auto bgPos = Vec2(bg.asValueMap()["x"].asFloat(), bg.asValueMap()["y"].asFloat());
+				m_background.AddParallaxLayer("img/bg/staticBG_forest03.png", 0.015f, bgPos, m_gameNode->getScale() * 1.0f, m_background.DEPTH_LEVEL_BACKGROUND + 2);
 			}
 		}
 	}
@@ -2227,7 +2243,7 @@ void Control3::update(float dt)
 	m_timeOfDay++;
 
 	//25 min reset
-	if (m_timeOfDay >= 3600)
+	if (m_timeOfDay >= MAX_TIME_DAY)
 	{
 		m_timeOfDay = 0;
 	}
@@ -2245,6 +2261,7 @@ void Control3::onTouchesBegan(const std::vector<cocos2d::Touch*>& touch, cocos2d
 			Rect touchPoint = Rect(t->getLocation().x, t->getLocation().y, 1, 1);
 			if (touchPoint.intersectsRect(m_rightRect))
 			{
+				auto JoyStick = (Sprite*)m_uiNode->getChildByTag(JOYSTICK_SPRITE_NUM);
 				//if (!m_swinging)
 				{
 					walk(true, m_character);
@@ -2252,10 +2269,12 @@ void Control3::onTouchesBegan(const std::vector<cocos2d::Touch*>& touch, cocos2d
 					m_standing = false;
 					m_animationInstanced = false;
 					m_moveTouchID = t->getID();
+					JoyStick->setPosition(visibleSize.width / 10 * 1.8, visibleSize.height / 6);
 				}
 			}
 			else if (touchPoint.intersectsRect(m_leftRect))
 			{
+				auto JoyStick = (Sprite*)m_uiNode->getChildByTag(JOYSTICK_SPRITE_NUM);
 				//if (!m_swinging)
 				{
 					walk(false, m_character);
@@ -2263,6 +2282,7 @@ void Control3::onTouchesBegan(const std::vector<cocos2d::Touch*>& touch, cocos2d
 					m_standing = false;
 					m_animationInstanced = false;
 					m_moveTouchID = t->getID();
+					JoyStick->setPosition(visibleSize.width / 10 * 1.2, visibleSize.height / 6);
 				}
 			}
 			else if (touchPoint.intersectsRect(m_StopButton))
@@ -2472,7 +2492,7 @@ void Control3::onTouchesMoved(const std::vector<cocos2d::Touch*>& touch, cocos2d
 			Rect touchPoint = Rect(t->getLocation().x, t->getLocation().y, 2, 2);
 			if (touchPoint.intersectsRect(m_rightRect))
 			{
-				//if (!m_directionRight)
+				if (m_standing)
 				{
 					//if (!m_swinging)
 					{
@@ -2488,7 +2508,7 @@ void Control3::onTouchesMoved(const std::vector<cocos2d::Touch*>& touch, cocos2d
 			}
 			else if (touchPoint.intersectsRect(m_leftRect))
 			{
-				//if (m_directionRight)
+				if (m_standing)
 				{
 					//if (!m_swinging)
 					{
@@ -2506,11 +2526,14 @@ void Control3::onTouchesMoved(const std::vector<cocos2d::Touch*>& touch, cocos2d
 			///ここにストップボタン追加
 			else if (touchPoint.intersectsRect(m_StopButton))
 			{
-				m_standing = true;
-				m_animationInstanced = false;
-				m_moveTouchID = -1;
-				//ジョイスティックpos移動
-				JoyStick->setPosition(visibleSize.width / 10 * 1.5, visibleSize.height / 6);
+				if (m_standing == false)
+				{
+					m_standing = true;
+					m_animationInstanced = false;
+					m_moveTouchID = -1;
+					//ジョイスティックpos移動
+					JoyStick->setPosition(visibleSize.width / 10 * 1.5, visibleSize.height / 6);
+				}
 			}
 
 		}

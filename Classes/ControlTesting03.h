@@ -136,13 +136,30 @@ private:
 		bool buildingDone;
 	};
 
+private:
+	//Constants
+	//Sprite name constants
+	const std::string POPUP_SPRITE = "PopUp";
+	const std::string RESOURCE_1 = "Res1";
+	const std::string RESOURCE_COUNT_1 = "ResCount1";
+	const std::string RESOURCE_2 = "Res2";
+	const std::string RESOURCE_COUNT_2 = "ResCount2";
+	const std::string RESOURCE_3 = "Res3";
+	const std::string RESOURCE_COUNT_3 = "ResCount3";
+	const std::string HOUSE_ICON_SPRITE = "HouseIcon";
+	//Sprite tag constants
+	const int JOYSTICK_SPRITE_NUM = 88;
+	//In-game value constants
+	//Max time of the day. (This affects the progressing velocity of the day timer)
+	const int MAX_TIME_DAY = 72000; //72000 = 20 min, 90000 = 25 min, 3600 = 1 min
+
 	//classes
 	//Enemy class
 	Enemy m_enemy;
-
 	//Parallax Background class
 	ParallaxBackground m_background;
 
+	//cocos / game specific pointers
 	cocos2d::Sprite* m_character;
 	cocos2d::Sprite* m_hpBar;
 	std::vector<cocos2d::Sprite*> m_npcVector;
@@ -187,18 +204,6 @@ private:
 	cocos2d::Node* m_foregroundNode;
 
 	int m_talkingNPCIndex;
-
-	//Sprite names
-	const std::string POPUP_SPRITE = "PopUp";
-	const std::string RESOURCE_1 = "Res1";
-	const std::string RESOURCE_COUNT_1 = "ResCount1";
-	const std::string RESOURCE_2 = "Res2";
-	const std::string RESOURCE_COUNT_2 = "ResCount2";
-	const std::string RESOURCE_3 = "Res3";
-	const std::string RESOURCE_COUNT_3 = "ResCount3";
-	const std::string HOUSE_ICON_SPRITE = "HouseIcon";
-
-	const int JOYSTICK_SPRITE_NUM = 88;
 
 	//---------------------
 	//----physics variables/constants
