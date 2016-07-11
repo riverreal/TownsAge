@@ -1100,32 +1100,36 @@ void Control3::simplePhysics()
 					auto blink = Blink::create(3, 3);
 					auto hide = Hide::create();
 					arrow->runAction(Sequence::create(hide, delay, blink, hide, NULL));
-					
+					//
 					//チュートリアルで光らせるやつ
-					auto square1 = Sprite::create("img/dpadCover.png");
-					square1->setScale(1.6);
+					auto square1 = Sprite::create("img/ui/AttackCover.png");
+					square1->setScale(0.4);
 					square1->setOpacity(150);
-					square1->setPosition(m_rightRect.getMidX(), m_rightRect.getMidY());
-					square1->setName("RightCover");
+					square1->setPosition(m_JoyStick.getMidX(),m_JoyStick.getMidY());
+					square1->setName("Pad_Cover");
 					m_uiNode->addChild(square1);
 
+					/*
 					auto square2 = Sprite::create("img/dpadCover.png");
 					square2->setScale(1.6);
 					square2->setOpacity(150);
 					square2->setPosition(m_leftRect.getMidX(), m_leftRect.getMidY());
 					square2->setName("LeftCover");
 					m_uiNode->addChild(square2);
-					//////あとでジョイスティック用に変える
+					*/
+					
 					
 					auto delay2 = DelayTime::create(0.7);
 					auto blink2 = Blink::create(3, 6);
 					auto hide2 = Hide::create();
 					square1->runAction(Sequence::create(hide2, delay2, blink2, hide2, NULL));
 
+					/*
 					auto delay3 = DelayTime::create(0.7);
 					auto blink3 = Blink::create(3, 6);
 					auto hide3 = Hide::create();
 					square2->runAction(Sequence::create(hide3, delay3, blink3, hide3, NULL));
+					*/
 				}
 				break;
 				case 1:
