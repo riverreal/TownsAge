@@ -6,6 +6,7 @@
 #include "GameData.h"
 #include "Enemy.h"
 #include "ParallaxBackground.h"
+#include "Effect.h"
 
 class Control3 : public cocos2d::Layer
 {
@@ -46,7 +47,8 @@ public:
 
     // a selector callback
     void menuCloseCallback();
-
+	
+	void nextAge();
 	void nextStep();
     
 	//controls
@@ -159,6 +161,12 @@ private:
 	//Parallax Background class
 	ParallaxBackground m_background;
 
+	//Effect Class
+	Effect* m_effects;
+
+	//Age number
+	unsigned int m_age;
+
 	//cocos / game specific pointers
 	cocos2d::Sprite* m_character;
 	cocos2d::Sprite* m_hpBar;
@@ -216,10 +224,11 @@ private:
 	const float MAX_SPEED = 4;
 
 	//max jump capacity
-	const float MAX_JUMP = 6;
+	const float MAX_JUMP = 4.8f;
 
 	//player states
 	bool m_standing;
+	bool m_jumpAnim;
 	bool m_onGround;
 	bool m_jumpInstanced;
 	bool m_onNext;

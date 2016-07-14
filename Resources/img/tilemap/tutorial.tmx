@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<map version="1.0" orientation="orthogonal" renderorder="right-up" width="200" height="41" tilewidth="32" tileheight="32" nextobjectid="46">
+<map version="1.0" orientation="orthogonal" renderorder="right-up" width="200" height="41" tilewidth="32" tileheight="32" nextobjectid="52">
  <tileset firstgid="1" name="Forest_sprite" tilewidth="32" tileheight="32" tilecount="128" columns="16">
   <image source="Forest_sprite.png" width="512" height="256"/>
   <terraintypes>
@@ -35,16 +35,9 @@
  <tileset firstgid="129" name="forest_tilemap_withTrees" tilewidth="32" tileheight="32" tilecount="900" columns="30">
   <image source="forest_tilemap_withTrees.png" width="960" height="960"/>
  </tileset>
- <layer name="bg02" width="200" height="41" visible="0">
-  <data encoding="base64" compression="zlib">
-   eJztzsdxAkEARNFZLpA6niyEzwIjkwXCLFHQx41AQ6neq/qXPnUpAAAAAAAAAAAAAAAAAAAAAAAAAMBfmKZZmqdFZx+mURqnSYVf8A42aZt2ad/ZP9IyrdK6wi9om1KeTd0Pn+krfaefzn5Ix3RK5wq/oN8rZdCr++GeHqlNz85+Sb/pmm4VfgEAAAAAAAAAAPB/vQDZ5xkZ
-  </data>
- </layer>
- <layer name="bg01" width="200" height="41" visible="0">
-  <data encoding="base64" compression="zlib">
-   eJzt10dSVUEYQGEuKsYdCKKY3QFKEAO4A8Ac2QEiKEnYgIKCCihsQIy7UILuQgk6VzgMKLq6aHj1eBOqzld1Brf772bSb0BRkSRJkiRJkiRJkiRJkiRJkiRJkiRJkiRJkiRJ0vb2j/7T0spHltuZjLli2kE7ozO7+C6h3bQnx/v2MreP9tOBxJl87pW26iBvrZTK6FCO766cucN0hCqiM0f5PkbH6USO951k7hSdpjOJM/ncK21VJW/tLJ2jqujdPaPnNECDwXo1czVUS+ejM3V8X6CLdCnae0EvaYiGg/XLzNVTA11JvP343tRdUiE18taaqJmuRm/zPU3SB/oYrF9j7jrdoJvRmVt836Y7dDfa+0Sf6Qt9DdbvMXefHlBL4vcR35u6SyqkVt7aQ2qjR9Hb/EbfaYqmg/V25jroMT2JznTy3UXd1BPtzdAs/aCfwXovc0+pj/oTv4/43tRdUj6meFPT67y9AdYGs/X3f9FvmqN5mmF/loZomF7R6+DM6v4IjWZr36sWaJH+0N/g77xl5h2N00Ti9/EmuHcsS98l5WOONzW/wf+1m+2vWGB/cYOZeH+zeUmSJEmSJEmSJEmSJEmFtQx5IVx4
-  </data>
- </layer>
+ <tileset firstgid="1029" name="spritemap_desert" tilewidth="32" tileheight="32" tilecount="64" columns="8">
+  <image source="spritemap_desert.png" width="256" height="256"/>
+ </tileset>
  <layer name="deco" width="200" height="41">
   <data encoding="base64" compression="zlib">
    eJztzEEKgDAMBMDmj/oRP6JPrj0VpKYKHjzMQCAsyZYCAAAAAAAAAAAAAAAAAAAAAAAAAAAAMLdH37e4v8v+rlnrWc5Zk77sf5a9vXnSASNHjPevOgEAAAAAAAAAgH+oqagHxQ==
@@ -57,43 +50,44 @@
  </layer>
  <layer name="タイル・レイヤー 1" width="200" height="41">
   <data encoding="base64" compression="zlib">
-   eJzt2FsKgzAQQFHbugLp/teq/SgtPlBpYJzpOXC/DZFkxK4DAAAAAAAAAAAAAAAAAAAAAAAAyOsZvQC4oNvUfeoRvRC4mNfZ6L8CPjOjn2WOwPJczCOH9z13tKFhZ56brb3zEb2+X/qn+bf3HqW1qtv6PpaOVF30/ip3VZkbalFV0fuqGp39r5Ol6H2VJEmSJElSm0ayhiBN
+   eJzt20EOgjAURVE0rsD9L9Y4IGHAD9J+LG3PSd5YQ3oxMbAsAAAAAAAAAAAAAPuehYMZvAoHM9AHxPQBMX1ATB8Q0wfE9AExfUBMHxDTB8T0ATF9kK33Z/S2zxnqg0zbM9VrI6VN6INIdL/trZGa3wx9sOfoTPXSSFYbM/XxWM69F/NOXOm7Of/eL+cl+zOvuKZZbczUR+Y1s3k2g+x7is2z0WnDajYybVjtRqUNq93X2f91elnra2t9b9X6e4w2xtL6PN1xsGp9Fu802NP6XLYeHGl9RrXBHX0Aptkavw==
   </data>
  </layer>
  <layer name="grass2" width="200" height="41">
   <data encoding="base64" compression="zlib">
-   eJzt1esJgzAUBlCH6ALFCbQTtCN0hTqB7g9NwUIIJg2CCOk58BHMg3slP9J1AAAAAAAAAAAAAAAAAAAAAAAAAEBrnmc3AACc6holZ1zHOWTJ7LltzN1DHtH3JVkfKmrX2KqdSmvHPXyMmfXS2b29v0KmHed+Kd3P15CZL/0/8L/6NQBQw7sBcKy+0QAAAAAAtO4NjXIOBw==
+   eJzt1V0KQEAUBlCLsAFZAVbAVlgB+y+j5oEJDyTJOfU1zU9zb83DZBkAAAAAAAAAAAAAAAAAAAAAAAAAAADwN3Ucx5Dp4Eyzs9aGdKt5nuxXIUXMHXu1U2ntdQ+L+mD/CX3I8MC9Z+8DcFX5dgMAfIp/AwAAAAAAALZmrkcE8Q==
   </data>
  </layer>
  <layer name="grass" width="200" height="41">
   <data encoding="base64" compression="zlib">
-   eJzt17ENgCAQBVBWMU6kcQHR/WdQEgo1WliB+F7yKwo+xeVCCAAAAAAAAAAAAAAAAAAAAAAAAADf0+cAZ8e5GIu1gLo87Qy7BGhF/zIl764ty54pZ72ctf52/iPuGYL/AdxJc5HmI5YuApWaSxcAgB/oGg0AAAAAQOs2L2obRQ==
-  </data>
- </layer>
- <layer name="mount" width="200" height="41">
-  <data encoding="base64" compression="zlib">
-   eJzt2EsKwjAQANC0Gz/3aC8iHkQ9iPW4fg5hggql1uJC+rHvQRZph2EIdFImBAAAAAAAAAAAAAAAAAAAAAAAAIDpqfIQyrg2+dCVwLicfBPwZpc/7o2myj3yV85ZCJds6CrGx7nMQ5F37xdxv4zr0EPfKzvy13vxthGXevX+i9qKZ9yxJTbl+PQvlJ6n90Ut5nUubZr1AQAAMB59zDuuMf/NTIUJ6pp3/Moq5l+bnQAAAAAAM3cHjrIRQA==
+   eJzt08sJgDAURcFgDTbgpyHtQPsvwgTcSyDygs7AWb+bRVICAAAAAAAAAAAAAAAAAAAAAAAAiLfeAcCTMbdEjwDoyFJZ5O2oWr9lbnSzdgfvGxrWizO35fboIdCh8i/K/zijh0CnjugBAPAD00cDAAAAAPi6CxcTFRk=
   </data>
  </layer>
  <layer name="col" width="200" height="41">
   <data encoding="base64" compression="zlib">
-   eJzt2EEKwzAMRcFcz/e/UFeFLPoDcWklhRnw0mCCXgw+jvvWxh6o9M+Z1QfT6AMyfUCmD8j0AZk+INMHZPqATB+Q6QMyfUCmD8j0AZk+INMHZPqATB+Q6QMyfUCmD8j0AZk+INMHZPqATB9UW6fVjT6odO6i43zogwqf7oyO94g+qHA1C53mRB/XlvWz9eRvvmN3X6WJZ2amSbP27b8A7po0a5POyjNMmDn3BlUmzNyEM9Jf9ftAt7cHeDNDAAAA0MML9GlPkA==
+   eJzt2EEKhDAQRcFcL/e/0GwHoQcXmbQ/VkHWNtpPwTEAAAAAAAAAAGCt2T0APJg+oKYP0uzcWX2QRh9Q0wfU9AE1fUBNH1DTB9T0ATV9QE0fUNMH1PTBanNkP+t5OTuvy9m6dmslfbDadadSG+mcP+1ecc+vNpIa6Z495T59u/PsnbPPLjuvtUrizGRK27Xd7w/eLWnXkmblDCk757tBh4SdS5iRM3X/h3ja/woAAAAA/ucDKYVIuA==
+  </data>
+ </layer>
+ <layer name="skull" width="200" height="41">
+  <data encoding="base64" compression="zlib">
+   eJzt06ENACAQA8AXWBgGiWT/obA4DAmfcGdrKtoIAAAAAAAAAAAAAAAAAAAAAAAAAADgpl5eN4C8hn/wmXrYfNvy6R8AAAAAAAAAAADpLVXZAN4=
   </data>
  </layer>
  <objectgroup name="player">
-  <object id="2" name="NextRight" x="5918" y="896" width="34" height="32"/>
+  <object id="2" name="NextLeft" x="449" y="1085" width="34" height="32"/>
   <object id="34" name="Spawn" x="733.333" y="1048.48" width="69.697" height="57.5758"/>
+  <object id="46" name="JumpIcon" x="1689.33" y="916" width="40" height="41.3333"/>
  </objectgroup>
  <objectgroup name="collectable">
   <object id="25" name="tree1" x="3057" y="832" width="96" height="98"/>
   <object id="28" name="tree2" x="3477" y="832" width="96" height="98"/>
   <object id="29" name="tree5" x="3720" y="832" width="96" height="98"/>
-  <object id="30" name="appletree" x="4171" y="832" width="96" height="98"/>
+  <object id="30" name="appletree" x="3983" y="828" width="96" height="98"/>
   <object id="37" name="tree4" x="3301" y="832" width="96" height="98"/>
-  <object id="38" name="engine" x="4714.33" y="755" width="75.3333" height="64.6667"/>
+  <object id="38" name="engine" x="5867.66" y="747.667" width="75.3333" height="64.6667"/>
  </objectgroup>
  <objectgroup name="enemy">
-  <object id="33" name="bear" x="5343" y="846" width="97" height="97">
+  <object id="33" name="bear" x="5081" y="847.667" width="97" height="97">
    <properties>
     <property name="range" type="float" value="400"/>
    </properties>
@@ -105,5 +99,6 @@
   <object id="42" name="montain01" x="888" y="828" width="148" height="160"/>
   <object id="43" name="montain02" x="794.667" y="836" width="168" height="152"/>
   <object id="44" name="montain03" x="728" y="872" width="208" height="148"/>
+  <object id="49" name="screenLimit" x="6356" y="640" width="36" height="36"/>
  </objectgroup>
 </map>

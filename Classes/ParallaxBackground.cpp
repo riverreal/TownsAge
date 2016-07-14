@@ -389,7 +389,6 @@ void ParallaxBackground::UpdateParallaxBG(int timeOfDay, cocos2d::Vec2 cameraPos
 				m_backgroundVector[i]->setPosition(Vec2(cameraPos.x * m_backgroundDataVector[i].scrollVel, 0));
 			}
 
-
 			float blacknessLevel = GetShadeAlphaByTime(timeOfDay, true);
 			switch (m_backgroundVector[i]->getTag())
 			{

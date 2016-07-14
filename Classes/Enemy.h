@@ -2,6 +2,7 @@
 
 #include "cocos2d.h"
 #include <vector>
+#include "Effect.h"
 
 class Enemy
 {
@@ -28,7 +29,10 @@ public:
 	///Returns true if the player is collisding with a monster
 	bool updateEnemies(cocos2d::Rect playerRect);
 	bool collideWith(cocos2d::Rect rect);
-	void receiveDamage(bool attackInstanced);
+	void receiveDamage(bool attackInstanced, Effect* effect);
+	
+	cocos2d::Vec2 GetStaticEnemyPos(unsigned int index);
+
 private:
 	void staticWalk(bool directionRight, cocos2d::Sprite * subject, float origin, float area, float vel);
 	cocos2d::Rect GetFrameSpriteRect(int frameCount, int frameStep, int size, int row, int animationCount);

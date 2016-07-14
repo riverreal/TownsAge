@@ -1,0 +1,95 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<map version="1.0" orientation="orthogonal" renderorder="right-up" width="200" height="41" tilewidth="32" tileheight="32" nextobjectid="48">
+ <tileset firstgid="1" name="Forest_sprite" tilewidth="32" tileheight="32" tilecount="128" columns="16">
+  <image source="Forest_sprite.png" width="512" height="256"/>
+  <terraintypes>
+   <terrain name="New Terrain" tile="-1"/>
+  </terraintypes>
+  <tile id="28" terrain=",,,0"/>
+  <tile id="29" terrain=",,0,"/>
+  <tile id="43" terrain=",,,0"/>
+  <tile id="44" terrain="0,0,0,0"/>
+  <tile id="45" terrain="0,0,0,0"/>
+  <tile id="46" terrain=",,0,0"/>
+  <tile id="59" terrain=",0,,0"/>
+  <tile id="60" terrain="0,0,0,0"/>
+  <tile id="61" terrain="0,0,0,0"/>
+  <tile id="62" terrain="0,0,0,0"/>
+  <tile id="75" terrain=",0,,0"/>
+  <tile id="76" terrain="0,0,0,0"/>
+  <tile id="77" terrain="0,0,0,0"/>
+  <tile id="78" terrain="0,0,0,0"/>
+  <tile id="91" terrain=",0,,0"/>
+  <tile id="92" terrain="0,0,0,0"/>
+  <tile id="93" terrain="0,0,0,0"/>
+  <tile id="94" terrain="0,0,0,0"/>
+  <tile id="107" terrain=",0,,0"/>
+  <tile id="108" terrain="0,0,0,0"/>
+  <tile id="109" terrain="0,0,0,0"/>
+  <tile id="110" terrain="0,0,0,0"/>
+  <tile id="123" terrain=",0,,"/>
+  <tile id="124" terrain="0,0,,"/>
+  <tile id="125" terrain="0,0,,"/>
+  <tile id="126" terrain="0,0,,"/>
+ </tileset>
+ <tileset firstgid="129" name="forest_tilemap_withTrees" tilewidth="32" tileheight="32" tilecount="900" columns="30">
+  <image source="forest_tilemap_withTrees.png" width="960" height="960"/>
+ </tileset>
+ <layer name="deco" width="200" height="41">
+  <data encoding="base64" compression="zlib">
+   eJztzEEKgDAMBMDmj/oRP6JPrj0VpKYKHjzMQCAsyZYCAAAAAAAAAAAAAAAAAAAAAAAAAAAAMLdH37e4v8v+rlnrWc5Zk77sf5a9vXnSASNHjPevOgEAAAAAAAAAgH+oqagHxQ==
+  </data>
+ </layer>
+ <layer name="bg00" width="200" height="41">
+  <data encoding="base64" compression="zlib">
+   eJzt1EkKwkAQBdBKNg6X92rRWzjnCBaI4MbqJogb34OGQH5+16LTEQAAAAAAAAAAAAAAAAAAAAAAAAAAACxxHCJOQ1/2nLlLke3p+kZHlWn1w8uu45ysxoj1+HzeZ/5QfLPJ3DbX9CHz3tXqaM1TzVLt0+qHpe55HufGP3XN97cf3M89swAAAAAAAAAAwL97ABJXF7s=
+  </data>
+ </layer>
+ <layer name="タイル・レイヤー 1" width="200" height="41">
+  <data encoding="base64" compression="zlib">
+   eJzt2cEKgzAURUGp/fJ+eVcBoYkWDXkvOgNnr5i7icsCAAAAAAAAAAAAAAAAAAAAwJ7XidaQJ4Xx3ieDJ7APaLMPaLMPaLMPsin3QBnYB1mUXZQzlmEj9kEG211si97Ik/bx7/+dT+fO/GOapV7vvnfWot5tPXiuO+3j6BtIPZuJbWh0s7ANRTQD21BU2dmGIou+N7lyHyJJkn4b4c7vthX9LbMENdHnMktQE30uswQ1X1eyKNM=
+  </data>
+ </layer>
+ <layer name="grass2" width="200" height="41">
+  <data encoding="base64" compression="zlib">
+   eJzt1d0JgzAQAGCHcIHiBNoJdBWdoO4PplAhBpOKL2L7fXCE/Bx3IQ+pKgAAAAAAAAAAAAAAAAAAAAAAAAAAAOCXPKLI6T7jK8ScOfPcWetDDNG8TvbbA7WP2KudSmvHPbx1mf1S7tnexxDTibxvSu+zajPrpfsD/625ugEAbsW/AQAAAAAAAFsLe+QGDQ==
+  </data>
+ </layer>
+ <layer name="grass" width="200" height="41">
+  <data encoding="base64" compression="zlib">
+   eJzt08EJgDAMQFFXESdSXMDq/jPYgifBgyAk6nvwTz00LaTrAAAAAAAAAAAAAAAAAAAAAAAAAAAAgDcbbhR1b8bW2ny0nc6eenvW/+M/Sm2sTdGDQEJtL9p+lOhBIKklegAA4FKfPAAAAACAr9sB85wXGA==
+  </data>
+ </layer>
+ <layer name="col" width="200" height="41">
+  <data encoding="base64" compression="zlib">
+   eJzt2LERhDAMRUG35/4bugb4XGJkZHZnlGIG9BKPAeebu18AXkwfkOkDMn1Apg/I9AGZPiDTB2T6gEwfkOkDMn1Apg/I9AGZPiDTB2T6gEwfkOkDsso+tEg3+oBMH5DpAzJ9QKYPyPTBKeZYv2P6oLt5MSufXUUfrHbVxspG9PHf3T8w50+VyrNWqf5GfFe3PdMGlTrtmjao1mXftMEOHXZOG+yy+x7ibfcVAAAAADznB9bZQ98=
+  </data>
+ </layer>
+ <objectgroup name="player">
+  <object id="2" name="NextRight" x="5918" y="896" width="34" height="32"/>
+  <object id="34" name="Spawn" x="733.333" y="1048.48" width="69.697" height="57.5758"/>
+  <object id="46" name="JumpIcon" x="5406.33" y="821" width="40" height="41.3333"/>
+ </objectgroup>
+ <objectgroup name="collectable">
+  <object id="25" name="tree1" x="3961" y="826" width="96" height="98"/>
+  <object id="28" name="tree2" x="4347" y="828" width="96" height="98"/>
+  <object id="29" name="tree5" x="4615" y="830" width="96" height="98"/>
+  <object id="30" name="appletree" x="3165" y="834" width="96" height="98"/>
+  <object id="37" name="tree4" x="4145" y="828" width="96" height="98"/>
+  <object id="38" name="engine" x="456.33" y="958" width="75.3333" height="64.6667"/>
+ </objectgroup>
+ <objectgroup name="enemy">
+  <object id="33" name="bear" x="1077.67" y="1014.67" width="97" height="97">
+   <properties>
+    <property name="range" type="float" value="400"/>
+   </properties>
+  </object>
+ </objectgroup>
+ <objectgroup name="bg">
+  <object id="39" name="forest01" x="3989" y="684.667" width="120" height="108"/>
+  <object id="40" name="forest02" x="4227.33" y="648.333" width="124" height="117.333"/>
+  <object id="42" name="montain01" x="888" y="828" width="148" height="160"/>
+  <object id="43" name="montain02" x="794.667" y="836" width="168" height="152"/>
+  <object id="44" name="montain03" x="728" y="872" width="208" height="148"/>
+ </objectgroup>
+</map>

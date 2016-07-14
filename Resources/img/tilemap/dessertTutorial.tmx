@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<map version="1.0" orientation="orthogonal" renderorder="right-up" width="200" height="41" tilewidth="32" tileheight="32" nextobjectid="56">
+ <tileset firstgid="1" name="spritemap ( new ) " tilewidth="32" tileheight="32" tilecount="64" columns="8">
+  <image source="spritemap_desert.png" width="256" height="256"/>
+ </tileset>
+ <tileset firstgid="65" name="Forest_sprite" tilewidth="32" tileheight="32" tilecount="128" columns="16">
+  <image source="Forest_sprite.png" width="512" height="256"/>
+ </tileset>
+ <objectgroup name="collectable">
+  <object id="41" name="cactus1" x="833.333" y="862.667" width="62.6667" height="64"/>
+  <object id="42" name="cactus1" x="2017.33" y="799.333" width="62.6667" height="64"/>
+  <object id="43" name="cactus1" x="2592.67" y="608.303" width="62.6667" height="64"/>
+  <object id="44" name="cactus1" x="3712" y="832.667" width="62.6667" height="64"/>
+  <object id="45" name="cactus1" x="3970" y="705.333" width="62.6667" height="64"/>
+  <object id="46" name="cactus1" x="3103.67" y="800" width="62.6667" height="64"/>
+  <object id="47" name="cactus1" x="4798.67" y="801" width="62.6667" height="64"/>
+  <object id="48" name="cactus1" x="5153.7" y="736.97" width="62.6667" height="64"/>
+ </objectgroup>
+ <objectgroup name="player">
+  <object id="2" name="NextRight" x="5918" y="896" width="34" height="32"/>
+  <object id="40" name="NextLeft" x="446.833" y="895.5" width="33" height="31"/>
+ </objectgroup>
+ <objectgroup name="enemy">
+  <object id="49" name="snake" x="1311" y="849.667" width="93.3333" height="60"/>
+ </objectgroup>
+ <layer name="base2" width="200" height="41">
+  <data encoding="base64" compression="zlib">
+   eJzt1tEOgjAMBVBj/P9v9kUTQsZYt86JnpPcFxOw61bgdgMAAAAAAAAAAAAAAAAAAADg7f4Kee6FcD32MN+7l49N9Ph69vto78ZsZ+BxEM+j6zh6xhHTMhe1WVmt9C34LbWtVNrPf+9JVO9szPzuityvVntPXSPXfNuc9szH6pozZNQ/OhdZ3129Z6q1/p5Za71mRg2ZIvPxybmede+W+s/WmT0XI7NSqrP1TEXWEOlZ7b1Yqzf6nj3by4yzejQfpf/61Fzve7z9veU8nPXrqP7anvXu6YxZ2dcbvXZ0HdF7ZffubE21RLWua1a9Lb3u7W3rHq469xlnY3U9V8roORQREREREREREREREfn1AACQ6wnhYCEb
+  </data>
+ </layer>
+ <layer name="deco" width="200" height="41">
+  <data encoding="base64" compression="zlib">
+   eJzt2LEOwiAQANCupi7qpP6Do6P//1lOndoSMIdA+t4KuVzau4MwTQAAAAAAAAAAAAAAAAAAAHlurROAjj1bJwAAf3ZtnQB07NE6AaiglzeBc2LtFRwPcrV8E8jtzXfVLNZGuyv+Mj+i3DP3zYX7j2JOrOX25icikQLLXXGUMyhyfuzVb+o/HtHyPS5B8U5BcWoZpRe2bM0P9Vym9/oEAAAAAAAAAACAPV/oaAL8
+  </data>
+ </layer>
+ <layer name="col" width="200" height="41">
+  <data encoding="base64" compression="zlib">
+   eJzt10mOgzAQBVAOwpVy/+tk0YoUIcpjMXXek7zoyAHbVT/Qy9JvHfgOXOnMnpUPnkY+ICYfEJMPiMkHxOQDYvIBMfmAmHxATD4g9jrxXvLB08gHxM7Mx5n3ggzyATH5gJh8QEw+ICYfEJMPiMkHxFp69tU4L+Nev+K1M7ifWl0ya6gH/nzOcv0acnJPpXps6yUfc74zsAbDM+VeavnY/j1Ts1+td0suSlm52t674F3WdrSefNTmz9zrvxrNxpHvXT3XK619ZF0z37kip9n5KK35KfnI+l9rJhdZ712jPbWdl/GM691D6xkemZGsfGz3vbfmrD2MnO/I/Gj/pXnZuZjJyt46W3uqZw89Z7bufNay3t7nbK2Wrb8XI/mI7lWbm5GPlr4s9UPtvD712/ZQqWajNT0yKz2/u7Wzm1lP7VrZZ1fbU2ns6c3H5/PR/WeMjLMtXXcJ5p3Z9xm9cfV6njSyexQAAAAAAAAAAEre1O6MQA==
+  </data>
+ </layer>
+ <layer name="stone2" width="200" height="41">
+  <data encoding="base64" compression="zlib">
+   eJzt1bENAAAIw7DezP8DZ1QI+4JsSQAAAAAAAAAAAAAAAAAAAAAAAADgr2kHAED8CAAAAAAAAAAAAOCKBc94AOU=
+  </data>
+ </layer>
+ <layer name="stone" width="200" height="41">
+  <data encoding="base64" compression="zlib">
+   eJzt1bEJADAMAzCvebf/D32ioYRIBxgPBicAAAAAAAAAAAAAAAAAAAAAAAAAsNf5XQAA0vNH1ZAJr9gnAAAAAAAAAAAAU12ljQD3
+  </data>
+ </layer>
+ <objectgroup name="bg">
+  <object id="53" name="desert01" x="765.333" y="882.667" width="106.667" height="104"/>
+  <object id="54" name="desert02" x="822.667" y="880" width="98.6667" height="93.3333"/>
+  <object id="55" name="screenLimit" x="6352" y="524" width="36" height="38.6667"/>
+ </objectgroup>
+</map>

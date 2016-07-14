@@ -19,7 +19,10 @@ enum NPC_TYPE
 	NPC_TYPE_BOY1,
 	NPC_TYPE_BOY2,
 	NPC_TYPE_BOY3,
-	NPC_TYPE_PREHISTORIC_MAX
+	NPC_TYPE_PREHISTORIC_MAX,
+	NPC_TYPE_LADY01,
+	NPC_TYPE_BLACKSMITH,
+	NPC_TYPE_MEDIEVAL_MAX
 };
 
 const std::string npcTypePath[] =
@@ -30,7 +33,11 @@ const std::string npcTypePath[] =
 	"img/sprites/caveman04.png",
 	"img/sprites/caveman05.png",
 	"img/sprites/caveman06.png",
-	"img/sprites/caveman07.png"
+	"img/sprites/caveman07.png",
+	"",
+	"img/sprites/medieval01.png",
+	"img/sprites/medieval02.png",
+	""
 };
 
 namespace mapData
@@ -115,14 +122,19 @@ namespace buildingData
 		BUILDING_NONE,
 		HOUSE,
 		TOWER,
-		MAX_PREHISTORIC
+		MAX_PREHISTORIC,
+		WEAPON_SHOP,
+		MAX_MEDIEVAL
 	};
 
 	const std::string buildingPath[] = 
 	{
 		"",
 		"img/buildings/p_a03.png",
-		"img/ui/towerIcon.png"
+		"img/ui/towerIcon.png",
+		"",
+		"img/buildings/weaponShop.png",
+		""
 	};
 
 	struct building
@@ -149,14 +161,18 @@ namespace buildingData
 	{
 		"",
 		"img/ui/woodIcon.png",
-		"img/ui/stoneIcon.png"
+		"img/ui/stoneIcon.png",
+		"img/ui/apple.png"
 	};
 
 	const building buildingRecepe[] =
 	{
 		building("", BUILDING_NONE, 0, BUILDING_NONE, 0, BUILDING_NONE, 0),
 		building("house", WOOD, 5, BUILDING_NONE, 0, BUILDING_NONE, 0),
-		building("tower", WOOD, 10, STONE, 5, BUILDING_NONE, 0)
+		building("tower", WOOD, 10, STONE, 5, BUILDING_NONE, 0),
+		building("", BUILDING_NONE, 0, BUILDING_NONE, 0, BUILDING_NONE, 0),
+		building("weaponShop", STONE, 10, WOOD, 10, BUILDING_NONE, 0),
+		building("", BUILDING_NONE, 0, BUILDING_NONE, 0, BUILDING_NONE, 0)
 	};
 }
 
@@ -194,7 +210,7 @@ namespace resourceData
 	const spreadIcons resourceSpread[] =
 	{
 		spreadIcons("", RESOURCE_NONE, RESOURCE_NONE, RESOURCE_NONE, RESOURCE_NONE, RESOURCE_NONE),
-		spreadIcons("tree", WOOD, WOOD, RESOURCE_NONE, RESOURCE_NONE, RESOURCE_NONE),
+		spreadIcons("tree", WOOD, WOOD, WOOD, RESOURCE_NONE, RESOURCE_NONE),
 		spreadIcons("appletree", WOOD, WOOD, APPLE, RESOURCE_NONE, RESOURCE_NONE)
 	};
 }

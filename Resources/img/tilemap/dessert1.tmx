@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<map version="1.0" orientation="orthogonal" renderorder="right-up" width="200" height="41" tilewidth="32" tileheight="32" nextobjectid="49">
+ <tileset firstgid="1" name="spritemap ( new ) " tilewidth="32" tileheight="32" tilecount="32" columns="4">
+  <image source="spritemap ( new )  (1).png" width="128" height="256"/>
+ </tileset>
+ <tileset firstgid="33" name="Forest_sprite" tilewidth="32" tileheight="32" tilecount="128" columns="16">
+  <image source="Forest_sprite.png" width="512" height="256"/>
+ </tileset>
+ <objectgroup name="collectable">
+  <object id="41" name="cactus1" x="833.333" y="862.667" width="62.6667" height="64"/>
+  <object id="42" name="cactus1" x="2017.33" y="799.333" width="62.6667" height="64"/>
+  <object id="43" name="cactus1" x="2592.67" y="608.303" width="62.6667" height="64"/>
+  <object id="44" name="cactus1" x="3712" y="832.667" width="62.6667" height="64"/>
+  <object id="45" name="cactus1" x="3970" y="705.333" width="62.6667" height="64"/>
+  <object id="46" name="cactus1" x="3103.67" y="800" width="62.6667" height="64"/>
+  <object id="47" name="cactus1" x="4798.67" y="801" width="62.6667" height="64"/>
+  <object id="48" name="cactus1" x="5153.7" y="736.97" width="62.6667" height="64"/>
+ </objectgroup>
+ <objectgroup name="player">
+  <object id="2" name="NextRight" x="5918" y="896" width="34" height="32"/>
+  <object id="40" name="NextLeft" x="446.833" y="895.5" width="33" height="31"/>
+ </objectgroup>
+ <objectgroup name="enemy"/>
+ <layer name="grass" width="200" height="41">
+  <data encoding="base64" compression="zlib">
+   eJztwYEAAAAAw6D5Ux/hAlUBAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAM8AgCAAAQ==
+  </data>
+ </layer>
+ <layer name="タイル・レイヤー 1" width="200" height="41">
+  <data encoding="base64" compression="zlib">
+   eJzt11tugzAQhWGEssPufy99SaWqBWyPx8HA90tHeQCbMzdMlgUAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA/rG8hj3VDuB5qmM/WbMjx9VC7XEpzId/XQs1yiMzFTPme2duZPDUnmTH2zsaIvLfsN8JX65pZ3yERL2d7ziDDf+Zc9PTD7/ujdczy83qrds3s52yLj8w61t5fu2dPPWruWSuunzErkbVfCXG0+mjxW/v8kq+M+arNQbR+Ea+ZuW2JdXSPZ/bGlfzOpFbO9kt0Vb2W/9+Tr8mVFW9p773nba0ZHVtpTWmf1vV7XiK+93otWs8jb5FaHOVvZK1nUMtsRPvrKJ8Z/qM91NMfW9dq9y3NRimuvRpkxNqbk7vNx6g81fRG1vMz5rt0/o3ov9pntngpzd1s/UDj8jjyTPqkMuMafW7Q59TbA2f7740980wyF/dU5n+BK2n98xvdw0zcXzXvzrv1wYjvMnqG9AIRERERPVXffromDg==
+  </data>
+ </layer>
+ <layer name="col" width="200" height="41">
+  <data encoding="base64" compression="zlib">
+   eJzt1VGugyAURdEOwfmPtr9N6lEQkdt0rYSfVzAU3H2vV7/twhpY6cl3Vh/8Gn1Apg/I9AGZPiDTB2T6gEwfkOkDMn1Apg/I9AGZPiDTB2T6gEwfkOkDMn1Apg/I9AGZPtbYdgb16ON5e23opCZ9POesC63Uo4/5rnRRqZHKe5tNH9/u3OdoGzPexZ7nzdhX75qVvyH6+HbHmd/Zxcj78Dm/5xkz9tO7psL/2Sp9XLn3ljmj99EyZ2v4fEUrs9e2PrN1/p3ncbav1rOo0MfIvR09o+cer5x3xTFyHv8+9qS/n1n9XQyj8gAAAAAAAAAAgCNv8pUpcQ==
+  </data>
+ </layer>
+ <layer name="stone" width="200" height="41">
+  <data encoding="base64" compression="zlib">
+   eJzt1cEJADAMAkA/WbD7D9MlGkrI3QDiQzABAAAAAAAAAAAAAAAAAAAAAAAAgL3O7wIAkJ4/qoZMeMU+AQAAAAAAAAAAmOoCEjkArw==
+  </data>
+ </layer>
+</map>

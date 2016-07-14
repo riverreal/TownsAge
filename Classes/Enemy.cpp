@@ -337,7 +337,7 @@ bool Enemy::collideWith(cocos2d::Rect rect)
 	return false;
 }
 
-void Enemy::receiveDamage(bool attackInstanced)
+void Enemy::receiveDamage(bool attackInstanced, Effect* effect)
 {
 	if (m_collidedMonsterIndex != -1)
 	{
@@ -353,6 +353,8 @@ void Enemy::receiveDamage(bool attackInstanced)
 				auto delay = DelayTime::create(0.1);
 				auto tintBack = TintTo::create(0.05, Color3B::WHITE);
 				m_staticEnemyVector[m_collidedMonsterIndex]->runAction(Sequence::create(tintRed, delay, tintBack, NULL));
+				
+				//effect->ShakeNode(m_staticEnemyVector[m_collidedMonsterIndex]);
 
 				//push back
 				int direction = 1;
@@ -367,6 +369,19 @@ void Enemy::receiveDamage(bool attackInstanced)
 		}
 	}
 	
+}
+
+Vec2 Enemy::GetStaticEnemyPos(unsigned int index)
+{
+	if (m_staticEnemyVector.size() > 0)
+	{
+		if (m_staticEnemyVector[index])
+		{
+			return m_staticEnemyVector[index]->getPosition();
+		}
+	}
+
+	return Vec2::ZERO;
 }
 
 void Enemy::staticWalk(bool directionRight, Sprite * subject, float origin, float area, float vel)

@@ -38,7 +38,7 @@ bool Control3::init()
 
 	
 	m_isTutorial = def->getBoolForKey("tutorial");
-	if (def->getIntegerForKey("MapArea") != 0 && m_isTutorial)
+	if (def->getIntegerForKey("MapArea") == 0 && m_isTutorial)
 	{
 		m_isTutorialHome = true;
 	}
@@ -51,18 +51,19 @@ bool Control3::init()
 	m_inTimeMachine = false;
 
 	//initial time of the day
-	m_timeOfDay = 0;
+	m_timeOfDay = 35000;
 	m_frameCounter = 0;
 
 	//physics variable initialization
 	m_standing = true;
 	m_onGround = false;
 	m_jumpInstanced = false;
+	m_jumpAnim = false;
 	m_speedX = 0;
 	m_speedY = 0;
 	m_accelerationX = 0.1;
 	m_frictionX = 1;
-	m_jumpForce = 1.5;
+	m_jumpForce = 1.5f;
 	m_damage = 10;
 	m_step = 0;
 	
@@ -109,6 +110,7 @@ bool Control3::init()
 	//           <-  ->
 	//         Cycle map
 	int area = def->getIntegerForKey("MapArea");
+	m_age = def->getIntegerForKey("AgeNumber");
 	bool fromRight = def->getBoolForKey("FromRight");
 	int playerX;
 	int playerY;
@@ -169,11 +171,22 @@ bool Control3::init()
 
 	if (m_isTutorial)
 	{
-		m_tilemap = TMXTiledMap::create("img/tilemap/tutorial.tmx");
-
+		if (m_age == 0)
+		{
+			m_tilemap = TMXTiledMap::create("img/tilemap/tutorial.tmx");
+		}
+		else if(m_age == 1)
+		{
+			m_tilemap = TMXTiledMap::create("img/tilemap/dessertTutorial.tmx");
+		}
+		
 		if (m_isTutorialHome)
 		{
 			m_tilemap = TMXTiledMap::create("img/tilemap/tutorial2.tmx");
+			if (m_age == 1)
+			{
+				m_tilemap = TMXTiledMap::create("img/tilemap/tutorial2-2.tmx");
+			}
 		}
 	}
 
@@ -188,11 +201,14 @@ bool Control3::init()
 	float rightArrowX = comeFrom["x"].asInt();
 	float rightArrowY = comeFrom["y"].asInt();
 
-	ValueMap spawnBox = objectGroup->getObject("Spawn");
-	if (spawnBox["x"].asInt() != 0)
+	if (def->getBoolForKey("FromMenu"))
 	{
-		playerX = spawnBox["x"].asInt();
-		playerY = spawnBox["y"].asInt();
+		ValueMap spawnBox = objectGroup->getObject("Spawn");
+		if (spawnBox["x"].asInt() != 0)
+		{
+			playerX = spawnBox["x"].asInt();
+			playerY = spawnBox["y"].asInt();
+		}
 	}
 	else
 	{
@@ -300,7 +316,7 @@ bool Control3::init()
 
 	m_inventoryY = visibleSize.height / 1.1;
 	auto inventoryFrame = Sprite::create("img/ui/inventory.png");
-	inventoryFrame->setOpacity(100);
+	//inventoryFrame->setOpacity(100);
 	inventoryFrame->setPosition(visibleSize.width / 2, visibleSize.height / 1.1);
 	m_uiNode->addChild(inventoryFrame);
 
@@ -330,8 +346,8 @@ bool Control3::init()
 	m_collisionLayer = m_tilemap->getLayer("col");
 	m_collisionLayer->setVisible(false);
 
-	m_character = Sprite::create("img/sprites/player/idle1.png");
-	m_character->setScale(1.024);
+	m_character = Sprite::create("img/sprites/player/newCharacter/idle1.png");
+	m_character->setScale(1.024f * 0.4216f);
 	m_character->setZOrder(20);
 	if (def->getBoolForKey("FromRight"))
 	{
@@ -351,7 +367,6 @@ bool Control3::init()
 		//spawn 4 npcs
 		spawnNPC(4);
 	}
-
 	
 	///////////////////////////////////////////////////////////////////////////////////////////////
 	_ButtonSwap = def->getBoolForKey("ButtonSwap");
@@ -399,7 +414,6 @@ bool Control3::init()
 		jButton->setOpacity(def->getFloatForKey("button"));
 		jButton->setScale(0.35);
 		m_uiNode->addChild(jButton);
-
 	}
 	else if (_ButtonSwap)
 	{
@@ -407,7 +421,6 @@ bool Control3::init()
 		jButton->setOpacity(def->getFloatForKey("button"));
 		jButton->setScale(0.35);
 		m_uiNode->addChild(jButton);
-
 	}
 		
 	auto aButton = Sprite::create("img/ui/Attack.png");
@@ -425,7 +438,6 @@ bool Control3::init()
 		aButton->setOpacity(def->getFloatForKey("button"));
 		aButton->setScale(0.35);
 		m_uiNode->addChild(aButton);
-
 	}
 
 	m_rightRect = Rect(rightButton->getBoundingBox());
@@ -468,10 +480,20 @@ bool Control3::init()
 
 	m_enemy.InitEnemies(m_gameNode);
 
-	//Background
-	m_background.Init(m_character->getPosition(), m_timeOfDay, visibleSize, m_gameNode, MAX_TIME_DAY, 3, rightArrowX + 200);
-
 	auto backgroundGroup = m_tilemap->getObjectGroup("bg");
+
+	auto cloudLimitX = 0;
+	cloudLimitX = backgroundGroup->getObject("screenLimit")["x"].asFloat();
+
+	//Background
+	auto cloudLevel = 3;
+	if (m_isTutorial && !m_isTutorialHome && m_age == 1)
+	{
+		cloudLevel = 0;
+	}
+	m_background.Init(m_character->getPosition(), m_timeOfDay, visibleSize, m_gameNode, MAX_TIME_DAY, cloudLevel, cloudLimitX + 200);
+
+	
 	if (backgroundGroup)
 	{
 		auto backgroundVector = backgroundGroup->getObjects();
@@ -502,6 +524,16 @@ bool Control3::init()
 				auto bgPos = Vec2(bg.asValueMap()["x"].asFloat(), bg.asValueMap()["y"].asFloat());
 				m_background.AddParallaxLayer("img/bg/staticBG_forest03.png", 0.015f, bgPos, m_gameNode->getScale() * 1.0f, m_background.DEPTH_LEVEL_BACKGROUND + 2);
 			}
+			else if (bg.asValueMap()["name"].asString() == "desert01")
+			{
+				auto bgPos = Vec2(bg.asValueMap()["x"].asFloat(), bg.asValueMap()["y"].asFloat());
+				m_background.AddParallaxLayer("img/bg/staticBG_desert01.png", 0.115f, bgPos, m_gameNode->getScale() * 1.0f, m_background.DEPTH_LEVEL_BACKGROUND);
+			}
+			else if (bg.asValueMap()["name"].asString() == "desert02")
+			{
+				auto bgPos = Vec2(bg.asValueMap()["x"].asFloat(), bg.asValueMap()["y"].asFloat());
+				m_background.AddParallaxLayer("img/bg/staticBG_desert02.png", 0.015f, bgPos, m_gameNode->getScale() * 1.2f, m_background.DEPTH_LEVEL_BACKGROUND + 1);
+			}
 		}
 	}
 
@@ -509,11 +541,9 @@ bool Control3::init()
 	m_skyNode->addChild(m_background.GetSkyNode());
 	m_foregroundNode->addChild(m_background.GetShadeSprite());
 
-	/*
-	auto ambientDust = ParticleSystemQuad::create("img/particles/ambient_dust.plist");
-	ambientDust->setPosition(visibleSize.width / 2, visibleSize.height / 2);
-	m_foregroundNode->addChild(ambientDust);
-	*/
+	m_effects = new Effect();
+	//For healing and dmg effects
+	m_foregroundNode->addChild(m_effects->GetColorScreen());
 
 	setViewpoint(m_character->getPosition());
 	m_hpBar = Sprite::create("img/ui/hpBar.png");
@@ -546,33 +576,97 @@ bool Control3::init()
 	if (m_isTutorialHome)
 	{
 		//Spawn 1 npc
+		if (m_age == 0)
+		{
+			if (def->getBoolForKey("HasTimeMachinePart"))
+			{
+				//Create a default state first
+				NPCStates randomState;
+				int maxType = NPC_TYPE_PREHISTORIC_MAX - 1;
+				int maxBuilding = buildingData::MAX_PREHISTORIC - 1;
+				randomState.npcType = NPC_TYPE_GIRL1;//cocos2d::RandomHelper::random_int(0, maxType);
+				randomState.buildingNum1 = buildingData::HOUSE;
+				//WARNING: npcStateVector and npcVector has to share the same index!
+				m_npcStateVector.push_back(randomState);
+				m_npcVector.push_back(Sprite::create(npcTypePath[m_npcStateVector[0].npcType]));
+				ValueMap spawnBox = objectGroup->getObject("Spawn");
+				float npcY;
+				if (spawnBox["y"].asInt() != 0)
+				{
+					npcY = spawnBox["y"].asFloat();
+				}
+				m_npcVector[0]->setPositionY(npcY);
+				m_npcVector[0]->setPositionX(cocos2d::RandomHelper::random_int(0, 500) + 1650);
+				m_npcVector[0]->setScale(0.1272);
+				m_gameNode->addChild(m_npcVector[0]);
+			}
 
-		//Create a default state first
-		NPCStates randomState;
-		int maxType = NPC_TYPE_PREHISTORIC_MAX - 1;
-		int maxBuilding = buildingData::MAX_PREHISTORIC - 1;
-		randomState.npcType = cocos2d::RandomHelper::random_int(0, maxType);
-		randomState.buildingNum1 = buildingData::HOUSE;
-		//WARNING: npcStateVector and npcVector has to share the same index!
-		m_npcStateVector.push_back(randomState);
-		m_npcVector.push_back(Sprite::create(npcTypePath[m_npcStateVector[0].npcType]));
-		m_npcVector[0]->setPositionY(m_character->getPositionY() - 15);
-		m_npcVector[0]->setPositionX(cocos2d::RandomHelper::random_int(0, 500) + 800);
-		m_npcVector[0]->setScale(0.1272);
-		m_gameNode->addChild(m_npcVector[0]);
+			auto timeMachine = Sprite::create("img/timeMachine/TimeMachine1.png");
+			auto timeMachineObject = objectGroup->getObject("TimeMachine");
+			auto timeMachineX = timeMachineObject["x"].asFloat();
+			auto timeMachineY = timeMachineObject["y"].asFloat();
+			timeMachine->setPosition(timeMachineX, timeMachineY);
+			timeMachine->setName("timeMachine");
+			timeMachine->setScale(2.5);
+			m_gameNode->addChild(timeMachine);
+		}
+		else if (m_age == 1)
+		{
 
-		auto timeMachine = Sprite::create("img/timeMachine/TimeMachine1.png");
-		auto timeMachineObject = objectGroup->getObject("TimeMachine");
-		auto timeMachineX = timeMachineObject["x"].asFloat();
-		auto timeMachineY = timeMachineObject["y"].asFloat();
-		timeMachine->setPosition(timeMachineX, timeMachineY);
-		timeMachine->setName("timeMachine");
-		timeMachine->setScale(2.5);
-		m_gameNode->addChild(timeMachine);
+			auto building = Sprite::create("img/buildings/weaponShop.png");
+			auto buildingObject = m_tilemap->getObjectGroup("player")->getObject("Building");
+			auto posX = buildingObject["x"].asFloat();
+			building->setScale(1.4f);
+			m_gameNode->addChild(building);
+
+
+			//Create a default state first
+			NPCStates randomState;
+			int maxType = NPC_TYPE_PREHISTORIC_MAX - 1;
+			int maxBuilding = buildingData::MAX_PREHISTORIC - 1;
+			randomState.npcType = NPC_TYPE_BLACKSMITH;//cocos2d::RandomHelper::random_int(0, maxType);
+			randomState.buildingNum1 = buildingData::BUILDING_NONE;
+			//WARNING: npcStateVector and npcVector has to share the same index!
+			m_npcStateVector.push_back(randomState);
+			m_npcVector.push_back(Sprite::create(npcTypePath[m_npcStateVector[0].npcType]));
+			ValueMap spawnBox = objectGroup->getObject("Spawn");
+			float npcY;
+			if (spawnBox["y"].asInt() != 0)
+			{
+				npcY = spawnBox["y"].asFloat() + 12;
+			}
+			m_npcVector[0]->setPositionY(npcY);
+			m_npcVector[0]->setPositionX(cocos2d::RandomHelper::random_int(0, 500) + 1650);
+			m_npcVector[0]->setScale(0.48);
+			m_gameNode->addChild(m_npcVector[0]);
+
+			building->setPosition(posX, npcY * 1.27);
+
+			auto timeMachine = Sprite::create("img/timeMachine/TimeMachine2.png");
+			auto timeMachineObject = objectGroup->getObject("TimeMachine");
+			auto timeMachineX = timeMachineObject["x"].asFloat();
+			auto timeMachineY = timeMachineObject["y"].asFloat();
+			timeMachine->setPosition(timeMachineX, timeMachineY);
+			timeMachine->setName("timeMachine");
+			timeMachine->setScale(2.5);
+			m_gameNode->addChild(timeMachine);
+
+			
+		}
 	}
 
-	
-	
+	if (m_age == 1)
+	{
+		if (m_isTutorial && !m_isTutorialHome)
+		{
+			auto cameraEye = Sprite::create();
+			cameraEye->setPosition(m_character->getPosition());
+			cameraEye->setName("tutorialCameraEye");
+			m_gameNode->addChild(cameraEye);
+
+			m_uiNode->setVisible(false);
+		}
+	}
 
     return true;
 }
@@ -589,7 +683,6 @@ void Control3::walk(bool directionRight, Sprite* subject)
 	{
 		subject->setFlippedX(false);
 	}
-	
 	
 	auto frame1 = RotateTo::create(0.1, -20);
 	auto frame2 = RotateTo::create(0.1, 20);
@@ -793,8 +886,8 @@ Vec2 Control3::setViewpoint(cocos2d::Vec2 position)
 {
 	auto visibleSize = Director::getInstance()->getWinSize();
 
-	int x = (visibleSize.width / 2) - position.x;
-	int y = (visibleSize.height / 2.3) - position.y;
+	int x = (visibleSize.width / 2.0f) - position.x;
+	int y = (visibleSize.height / 2.8f) - position.y;
 
 	//player-centered position non-scaled
 	auto defPosition = Vec2(x, y);
@@ -887,143 +980,184 @@ void Control3::simplePhysics()
 
 	if (!m_animationInstanced)
 	{
-		if (m_standing)
+		if (m_standing && m_onGround)
 		{
+			//once = false;
 			m_animationInstanced = true;
 			resetPlayerActions();
 			m_character->runAction(RepeatForever::create(Animate::create(m_playerAnimCache->getAnimation("idle"))));
 		}
-		else
+		else if(!m_standing && m_onGround)
 		{
+			//once = false;
 			m_animationInstanced = true;
+			resetPlayerActions();
 			auto walkingAnim = Animate::create(m_playerAnimCache->getAnimation("walking"));
 			m_character->runAction(RepeatForever::create(walkingAnim));
 		}
 	}
 	
+	if (m_onGround)
+	{
+		if (m_jumpAnim && m_animationInstanced)
+		{
+			m_animationInstanced = false;
+			m_jumpAnim = false;
+		}
+	}
+	else 
+	{
+		//if (!m_animationInstanced)
+		{
+			m_animationInstanced = true;
+			m_jumpAnim = true;
+			resetPlayerActions();
+			auto jumpAnim = Animate::create(m_playerAnimCache->getAnimation("jump"));
+			m_character->runAction(jumpAnim);
+		}
+	}
+	
+	//Time Travel
 	if (m_isTutorialHome)
 	{
 		if (!m_inTimeMachine)
 		{
+			//When player collides with time machine -> run the time travelling cutscene
 			auto timeMachine = m_gameNode->getChildByName("timeMachine");
-			if (m_character->getBoundingBox().intersectsRect(timeMachine->getBoundingBox()))
+
+			auto def = UserDefault::getInstance();
+			if (def->getBoolForKey("HasTimeMachinePart"))
 			{
-				m_inTimeMachine = true;
-				m_character->setPosition(m_gameNode->convertToWorldSpace(m_character->getPosition()));
-				m_character->retain();
-				m_character->removeFromParent();
-				m_temporaryNode->addChild(m_character);
-				m_character->release();
-				m_character->setScale(m_character->getScale() * m_gameNode->getScale());
+				if (m_character->getBoundingBox().intersectsRect(timeMachine->getBoundingBox()) &&  m_step == 3)
+				{
+					m_inTimeMachine = true;
+					m_character->setPosition(m_gameNode->convertToWorldSpace(m_character->getPosition()));
+					m_character->retain();
+					m_character->removeFromParent();
+					m_temporaryNode->addChild(m_character);
+					m_character->release();
+					m_character->setScale(m_character->getScale() * m_gameNode->getScale());
 
-				timeMachine->setPosition(m_gameNode->convertToWorldSpace(timeMachine->getPosition()));
-				timeMachine->retain();
-				timeMachine->removeFromParent();
-				m_temporaryNode->addChild(timeMachine);
-				timeMachine->release();
-				timeMachine->setScale(timeMachine->getScale() * m_gameNode->getScale());
+					timeMachine->setPosition(m_gameNode->convertToWorldSpace(timeMachine->getPosition()));
+					timeMachine->retain();
+					timeMachine->removeFromParent();
+					m_temporaryNode->addChild(timeMachine);
+					timeMachine->release();
+					timeMachine->setScale(timeMachine->getScale() * m_gameNode->getScale());
 
-				auto timeMachinePart = m_uiNode->getChildByName("engineSilluette");
-				timeMachinePart->retain();
-				timeMachinePart->removeFromParent();
-				m_temporaryNode->addChild(timeMachinePart);
-				timeMachinePart->release();
+					m_character->setPositionX(m_character->getPositionX() * 1.39f);
+					m_character->setPositionY(m_character->getPositionY() * 1.05f);
 
-				m_gameNode->setCascadeOpacityEnabled(true);
-				m_uiNode->setCascadeOpacityEnabled(true);
-				m_backgroundNode->setCascadeOpacityEnabled(true);
-				m_temporaryNode->setZOrder(21);
+					timeMachine->setPositionX(timeMachine->getPositionX() * 1.39f);
+					timeMachine->setPositionY(timeMachine->getPositionY() * 1.05f);
 
-				auto screenFiller = Sprite::create("img/bg.png");
-				auto visibleSize = Director::getInstance()->getVisibleSize();
-				screenFiller->setPosition(visibleSize.width / 2, visibleSize.height / 2);
-				screenFiller->setColor(Color3B::BLACK);
-				screenFiller->setScale(3);
-				screenFiller->setOpacity(0);
-				m_temporaryNode->addChild(screenFiller, -1);
+					auto timeMachinePart = m_uiNode->getChildByName("engineSilluette");
+					timeMachinePart->retain();
+					timeMachinePart->removeFromParent();
+					m_temporaryNode->addChild(timeMachinePart);
+					timeMachinePart->release();
 
-				screenFiller->runAction(FadeIn::create(2));
+					m_gameNode->setCascadeOpacityEnabled(true);
+					m_uiNode->setCascadeOpacityEnabled(true);
+					m_backgroundNode->setCascadeOpacityEnabled(true);
+					m_temporaryNode->setZOrder(21);
 
-				m_disableGame = true;
-				m_character->runAction(Animate::create(m_playerAnimCache->getAnimation("idle")));
+					auto screenFiller = Sprite::create("img/bg.png");
+					auto visibleSize = Director::getInstance()->getVisibleSize();
+					screenFiller->setPosition(visibleSize.width / 2, visibleSize.height / 2);
+					screenFiller->setColor(Color3B::BLACK);
+					screenFiller->setScale(3);
+					screenFiller->setOpacity(0);
+					m_temporaryNode->addChild(screenFiller, -1);
 
-				timeMachinePart->setZOrder(-1);
+					screenFiller->runAction(FadeIn::create(2));
 
-				//--------------------------------------------------------------
-				//Definition of actions needed for time travel.
-				//--------------------------------------------------------------
-				auto delay = DelayTime::create(1.5);
-				auto moveTo = MoveTo::create(1, timeMachine->getPosition());
+					m_disableGame = true;
+					m_character->runAction(Animate::create(m_playerAnimCache->getAnimation("idle")));
 
-				auto tempNode = m_temporaryNode;
+					timeMachinePart->setZOrder(-1);
 
-				auto transform = CallFunc::create([timeMachine, tempNode]() {
-					auto scaleUp = ScaleBy::create(0.1, 1.2);
-					auto scaleDown = ScaleBy::create(0.1, 0.8);
+					//--------------------------------------------------------------
+					//Definition of actions needed for time travel.
+					//--------------------------------------------------------------
+					auto delay = DelayTime::create(1.5);
+					auto moveTo = MoveTo::create(1, timeMachine->getPosition());
 
-					auto newTimeMachine = Sprite::create("img/timeMachine/TimeMachine2.png");
-					newTimeMachine->setPosition(timeMachine->getPosition());
-					newTimeMachine->setName("newTime");
-					newTimeMachine->setScale(timeMachine->getScale());
-					tempNode->addChild(newTimeMachine, 2);
-					newTimeMachine->setVisible(false);
+					auto tempNode = m_temporaryNode;
+
+					auto transform = CallFunc::create([timeMachine, tempNode]() {
+						auto scaleUp = ScaleBy::create(0.1, 1.2);
+						auto scaleDown = ScaleBy::create(0.1, 0.8);
+
+						auto newTimeMachine = Sprite::create("img/timeMachine/TimeMachine2.png");
+						newTimeMachine->setPosition(timeMachine->getPosition());
+						newTimeMachine->setName("newTime");
+						newTimeMachine->setScale(timeMachine->getScale());
+						tempNode->addChild(newTimeMachine, 2);
+						newTimeMachine->setVisible(false);
 
 
-					auto hideOld = Hide::create();
+						auto hideOld = Hide::create();
 
-					auto showNewFunc = CallFunc::create([newTimeMachine]() {
-						auto showNew = Show::create();
-						newTimeMachine->runAction(showNew);
+						auto showNewFunc = CallFunc::create([newTimeMachine]() {
+							auto showNew = Show::create();
+							newTimeMachine->runAction(showNew);
+						});
+
+						auto hideAndShow = Spawn::create(hideOld, showNewFunc, NULL);
+
+						timeMachine->runAction(Sequence::create(scaleUp, scaleDown, scaleUp, scaleDown, scaleUp, scaleDown, scaleUp, scaleDown, scaleUp, scaleDown, scaleUp, hideAndShow, NULL));
 					});
 
-					auto hideAndShow = Spawn::create(hideOld, showNewFunc, NULL);
+					auto reachDelay = DelayTime::create(0.5);
 
-					timeMachine->runAction(Sequence::create(scaleUp, scaleDown, scaleUp, scaleDown, scaleUp, scaleDown, scaleUp, scaleDown, scaleUp, scaleDown, scaleUp, hideAndShow, NULL));
-				});
+					auto transformDelay = DelayTime::create(1.6);
 
-				auto reachDelay = DelayTime::create(0.5);
+					auto player = m_character;
 
-				auto transformDelay = DelayTime::create(1.6);
+					auto jumpPlayer = CallFunc::create([player, tempNode]() {
+						auto pos = tempNode->getChildByName("newTime")->getPosition();
+						auto diffX = -pos.x + player->getPositionX();
+						auto diffY = -pos.y + player->getPositionY();
+						auto moveX = MoveBy::create(0.4, Vec2(-diffX, 0));
+						auto moveY = MoveBy::create(0.7, Vec2(0, -diffY + 8));
+						auto fadeOutPlayer = FadeOut::create(0.7);
+						auto sequence = Sequence::create(Spawn::create(moveX, moveY, NULL), fadeOutPlayer, NULL);
 
-				auto player = m_character;
+						player->runAction(sequence);
+					});
 
-				auto jumpPlayer = CallFunc::create([player, tempNode]() {
-					auto pos = tempNode->getChildByName("newTime")->getPosition();
-					auto diffX = -pos.x + player->getPositionX();
-					auto diffY = -pos.y + player->getPositionY();
-					auto moveX = MoveBy::create(0.4, Vec2(-diffX, 0));
-					auto moveY = MoveBy::create(0.7, Vec2(0, -diffY + 8));
-					auto fadeOutPlayer = FadeOut::create(0.7);
-					auto sequence = Sequence::create(Spawn::create(moveX, moveY, NULL), fadeOutPlayer, NULL);
+					auto jumpDelay = DelayTime::create(1.8);
 
-					player->runAction(sequence);
-				});
+					auto twirling = CallFunc::create([tempNode, player, timeMachinePart]() {
+						timeMachinePart->setVisible(false);
+						player->setVisible(false);
+						auto newTime = tempNode->getChildByName("newTime");
+						auto skew = SkewBy::create(0.5, RandomHelper::random_int(-20, 20), RandomHelper::random_int(-20, 20));
+						auto skew2 = SkewBy::create(0.5, RandomHelper::random_int(-20, 20), RandomHelper::random_int(-20, 20));
+						auto skew3 = SkewBy::create(0.5, RandomHelper::random_int(-20, 20), RandomHelper::random_int(-20, 20));
+						auto skew4 = SkewBy::create(0.5, RandomHelper::random_int(-20, 20), RandomHelper::random_int(-20, 20));
+						auto skew5 = SkewBy::create(0.5, RandomHelper::random_int(-100, 100), RandomHelper::random_int(-100, 100));
+						auto blinking = Blink::create(2.5f, 10);
+						newTime->runAction(Sequence::create(skew, skew2, skew3, skew4, skew5, NULL));
+						newTime->runAction(blinking);
+						newTime->runAction(FadeOut::create(3.5f));
+					});
 
-				auto jumpDelay = DelayTime::create(1.8);
+					auto twirlingDelay = DelayTime::create(4.5f);
 
-				auto twirling = CallFunc::create([tempNode, player, timeMachinePart]() {
-					timeMachinePart->setVisible(false);
-					player->setVisible(false);
-					auto newTime = tempNode->getChildByName("newTime");
-					auto skew = SkewBy::create(0.5, RandomHelper::random_int(-20, 20), RandomHelper::random_int(-20, 20));
-					auto skew2 = SkewBy::create(0.5, RandomHelper::random_int(-20, 20), RandomHelper::random_int(-20, 20));
-					auto skew3 = SkewBy::create(0.5, RandomHelper::random_int(-20, 20), RandomHelper::random_int(-20, 20));
-					auto skew4 = SkewBy::create(0.5, RandomHelper::random_int(-20, 20), RandomHelper::random_int(-20, 20));
-					auto skew5 = SkewBy::create(0.5, RandomHelper::random_int(-100, 100), RandomHelper::random_int(-100, 100));
-					auto blinking = Blink::create(2.5f, 10);
-					newTime->runAction(Sequence::create(skew, skew2, skew3, skew4, skew5, NULL));
-					newTime->runAction(blinking);
-					newTime->runAction(FadeOut::create(3.5f));
-				});
+					def->setBoolForKey("FromMenu", true);
 
-				auto twirlingDelay = DelayTime::create(4.5f);
+					auto backToTitleScreen = CallFunc::create([this]() {this->menuCloseCallback(); });
+					auto goToAge = CallFunc::create([this]() {
+						this->nextAge();
+						this->resetScene(); 
+					});
 
-
-				auto backToTitleScreen = CallFunc::create([this]() {this->menuCloseCallback(); });
-
-				//Complete sequence of actions for the time travel animation.
-				//transform, jumpPlayer and twirling are lambda functions
-				timeMachinePart->runAction(Sequence::create(delay, moveTo, reachDelay, transform, transformDelay, jumpPlayer, jumpDelay, twirling, twirlingDelay, backToTitleScreen, NULL));
+					//Complete sequence of actions for the time travel animation.
+					//transform, jumpPlayer and twirling are lambda functions
+					timeMachinePart->runAction(Sequence::create(delay, moveTo, reachDelay, transform, transformDelay, jumpPlayer, jumpDelay, twirling, twirlingDelay, goToAge, NULL));
+				}
 			}
 		}
 	}
@@ -1031,267 +1165,597 @@ void Control3::simplePhysics()
 	if (m_isTutorial)
 	{
 		if (!m_isTutorialHome)
-		{
-			//step manager
-			if (m_step == 0)
+		{ 
+			if (m_age == 0)
 			{
-				if (m_character->getPositionX() >= 1350 && m_character->getPositionX() <= 1420)
+				//step manager
+				//Jump Highlight
+				if (m_step == 0)
 				{
-					nextStep();
+					if (m_character->getPositionX() >= 1350 && m_character->getPositionX() <= 1420)
+					{
+						nextStep();
+					}
 				}
-			}
-			else if (m_step == 1)
-			{
-				if (m_character->getPositionX() >= 2025 && m_character->getPositionX() <= 2100)
+				//Go Right
+				else if (m_step == 1)
 				{
-					nextStep();
+					if (m_character->getPositionX() >= 2025 && m_character->getPositionX() <= 2100)
+					{
+						nextStep();
+					}
 				}
-			}
-			else if (m_step == 2)
-			{
-				if (m_character->getPositionX() >= 2750 && m_character->getPositionX() <= 2825)
+				//Cut Tree
+				else if (m_step == 2)
 				{
-					nextStep();
+					if (m_character->getPositionX() >= 2750 && m_character->getPositionX() <= 2825)
+					{
+						nextStep();
+					}
 				}
-			}
-			else if (m_step == 3)
-			{
-				if (m_character->getPositionX() >= 4415 && m_character->getPositionX() <= 4500)
+				
+				//Kill the bear
+				else if (m_step == 3)
 				{
-					nextStep();
+					if (m_character->getPositionX() >= m_enemy.GetStaticEnemyPos(0).x - 300 && m_character->getPositionX() <= m_enemy.GetStaticEnemyPos(0).x + 200)
+					{
+						nextStep();
+					}
 				}
-			}
-			else if (m_step == 4)
-			{
-				if (m_character->getPositionX() >= 4820 && m_character->getPositionX() <= 4900)
+
+				//Take the time machine part
+				else if (m_step == 4)
 				{
-					nextStep();
+					if (m_gameNode->getChildByName("engine"))
+					{
+						if (m_character->getPositionX() >= m_gameNode->getChildByName("engine")->getPosition().x - 300 && m_character->getPositionX() <= m_gameNode->getChildByName("engine")->getPosition().x + 150)
+						{
+							nextStep();
+						}
+					}
 				}
-			}
-			else if (m_step == 5)
-			{
-				if (m_character->getPositionX() >= 5480 && m_character->getPositionX() <= 5580)
+
+				//Go Left
+				else if (m_step == 5)
 				{
-					nextStep();
+					if (!m_gameNode->getChildByName("engine"))
+					{
+						nextStep();
+					}
 				}
-			}
-
-
-			if (m_stepDone)
-			{
-				m_stepDone = false;
-
-				auto visibleSize = Director::getInstance()->getVisibleSize();
-
-				switch (m_step)
+				//Go left
+				else if (m_step == 6)
 				{
-					//first step
-				case 0:
-				{
-					auto arrow = Sprite::create("img/ui/tutorialArrow.png");
-					arrow->setRotation(90);
-					arrow->setOpacity(230);
-					arrow->setScale(0.35);
-					arrow->setPosition(visibleSize.width / 2, visibleSize.height / 1.4);
-					arrow->setName("HorizontalArrow");
-					m_uiNode->addChild(arrow);
-
-					auto delay = DelayTime::create(0.7);
-					auto blink = Blink::create(3, 3);
-					auto hide = Hide::create();
-					arrow->runAction(Sequence::create(hide, delay, blink, hide, NULL));
-					//
-					//チュートリアルで光らせるやつ
-					auto square1 = Sprite::create("img/ui/AttackCover.png");
-					square1->setScale(0.4);
-					square1->setOpacity(150);
-					square1->setPosition(m_JoyStick.getMidX(),m_JoyStick.getMidY());
-					square1->setName("Pad_Cover");
-					m_uiNode->addChild(square1);
-
-					/*
-					auto square2 = Sprite::create("img/dpadCover.png");
-					square2->setScale(1.6);
-					square2->setOpacity(150);
-					square2->setPosition(m_leftRect.getMidX(), m_leftRect.getMidY());
-					square2->setName("LeftCover");
-					m_uiNode->addChild(square2);
-					*/
-					
-					
-					auto delay2 = DelayTime::create(0.7);
-					auto blink2 = Blink::create(3, 6);
-					auto hide2 = Hide::create();
-					square1->runAction(Sequence::create(hide2, delay2, blink2, hide2, NULL));
-
-					/*
-					auto delay3 = DelayTime::create(0.7);
-					auto blink3 = Blink::create(3, 6);
-					auto hide3 = Hide::create();
-					square2->runAction(Sequence::create(hide3, delay3, blink3, hide3, NULL));
-					*/
+					if (m_character->getPositionX() >= 2025 && m_character->getPositionX() <= 2100)
+					{
+						nextStep();
+					}
 				}
-				break;
-				case 1:
+
+				if (m_stepDone)
 				{
-					auto circle = Sprite::create("img/ui/AttackCover.png");
-					circle->setOpacity(255);
-					circle->setPosition(m_jButtonRect.getMidX(), m_jButtonRect.getMidY());
-					circle->setName("ButtonCover");
-					circle->setScale(0.4);
-					circle->setVisible(false);
-					m_uiNode->addChild(circle);
+					m_stepDone = false;
 
-					auto delay = DelayTime::create(0.7);
-					auto blink = Blink::create(3, 3);
-					auto hide = Hide::create();
-					circle->runAction(Sequence::create(hide, blink, hide, NULL));
-				}
-				break;
-				case 2:
-				{
-					auto arrow = static_cast<Sprite*>(m_uiNode->getChildByName("HorizontalArrow"));
+					auto visibleSize = Director::getInstance()->getVisibleSize();
 
-					auto blink = Blink::create(3, 3);
-					auto hide = Hide::create();
-					arrow->runAction(Sequence::create(hide, blink, hide, NULL));
+					switch (m_step)
+					{
+						//Moving control highlight
+					case 0:
+					{
+						auto arrow = Sprite::create("img/ui/tutorialArrow.png");
+						arrow->setRotation(90);
+						arrow->setOpacity(230);
+						arrow->setScale(0.35);
+						arrow->setPosition(visibleSize.width / 2, visibleSize.height / 1.4);
+						arrow->setName("HorizontalArrow");
+						m_uiNode->addChild(arrow);
 
-				}
-				break;
-				case 3:
-				{
-					auto arrowV = Sprite::create("img/ui/tutorialArrow.png");
-					arrowV->setRotation(180);
-					arrowV->setOpacity(230);
-					arrowV->setScale(0.2);
-					arrowV->setVisible(false);
-					arrowV->setPosition(m_resourceVector[0]->getPositionX(), m_resourceVector[0]->getPositionY() + 100);
-					arrowV->setName("VerticalArrow");
-					m_gameNode->addChild(arrowV);
+						auto delay = DelayTime::create(0.7);
+						auto blink = Blink::create(3, 3);
+						auto hide = Hide::create();
+						arrow->runAction(Sequence::create(hide, delay, blink, hide, NULL));
 
-					auto blink = Blink::create(3, 3);
-					auto hide = Hide::create();
-					arrowV->runAction(Sequence::create(blink, NULL));
+						/*
+						auto square1 = Sprite::create("img/ui/AttackCover.png");
+						square1->setScale(0.4);
+						square1->setOpacity(150);
+						square1->setPosition(m_JoyStick.getMidX(), m_JoyStick.getMidY());
+						square1->setName("Pad_Cover");
+						m_uiNode->addChild(square1);
 
-					auto circle = m_uiNode->getChildByName("ButtonCover");
-					circle->setPosition(m_aButtonRect.getMidX(), m_aButtonRect.getMidY());
-
-					auto blink2 = Blink::create(3, 3);
-					circle->runAction(Sequence::create(blink2, NULL));
-
-				}
-				break;
-				case 4:
-				{
-					auto arrowV = m_gameNode->getChildByName("VerticalArrow");
-					Vec2 enginePos = m_gameNode->getChildByName("engine")->getPosition();
-					arrowV->setPosition(enginePos.x, enginePos.y + 70);
-					auto blink = Blink::create(3, 3);
-					arrowV->runAction(Sequence::create(blink, NULL));
-				}
-				break;
-				case 5:
-				{
-					auto circle = m_uiNode->getChildByName("ButtonCover");
-
-					auto blink = Blink::create(3, 3);
-					circle->runAction(blink);
-				}
-				break;
-				case 6:
-				{
-					auto arrow = static_cast<Sprite*>(m_uiNode->getChildByName("HorizontalArrow"));
-
-					auto blink = Blink::create(3, 3);
-					arrow->runAction(blink);
-				}
-				break;
-				default:
+						auto delay2 = DelayTime::create(0.7);
+						auto blink2 = Blink::create(3, 6);
+						auto hide2 = Hide::create();
+						square1->runAction(Sequence::create(hide2, delay2, blink2, hide2, NULL));
+						*/
+					}
 					break;
+
+					//Jump Button highlight + jump arrow
+					case 1:
+					{
+						//clean up
+						m_uiNode->removeChildByName("Pad_Cover");
+
+						auto circle = Sprite::create("img/ui/AttackCover.png");
+						circle->setOpacity(255);
+						circle->setPosition(m_jButtonRect.getMidX(), m_jButtonRect.getMidY());
+						circle->setName("ButtonCover");
+						circle->setScale(0.4);
+						circle->setVisible(false);
+						m_uiNode->addChild(circle);
+
+						auto delay = DelayTime::create(0.7);
+						auto blink = Blink::create(3, 3);
+						auto hide = Hide::create();
+						circle->runAction(Sequence::create(hide, blink, hide, NULL));
+
+						float arrowX;
+						float arrowY;
+
+						auto backgroundGroup = m_tilemap->getObjectGroup("player");
+						if (backgroundGroup)
+						{
+							auto jumpObject = backgroundGroup->getObject("JumpIcon");
+							arrowX = jumpObject["x"].asFloat();
+							arrowY = jumpObject["y"].asFloat();
+						}
+
+						auto jumpArrow = Sprite::create("img/ui/tutorialArrow.png");
+						jumpArrow->setPosition(arrowX, arrowY);
+						jumpArrow->setScale(0.3f);
+						jumpArrow->setRotation(45);
+						jumpArrow->setName("JumpArrow");
+						m_gameNode->addChild(jumpArrow);
+
+						auto delay2 = DelayTime::create(0.7f);
+						auto blink2 = Blink::create(3, 6);
+						auto hide2 = Hide::create();
+						jumpArrow->runAction(Sequence::create(hide2, delay2, blink2, hide2, NULL));
+
+					}
+					break;
+
+					//Go right icon
+					case 2:
+					{
+						//clean up
+						m_gameNode->removeChildByName("JumpArrow");
+
+						auto arrow = static_cast<Sprite*>(m_uiNode->getChildByName("HorizontalArrow"));
+
+						auto blink = Blink::create(3, 3);
+						auto hide = Hide::create();
+						arrow->runAction(Sequence::create(hide, blink, hide, NULL));
+
+					}
+					break;
+
+					//Cut down first tree
+					case 3:
+					{
+						auto arrowV = Sprite::create("img/ui/tutorialArrow.png");
+						arrowV->setRotation(180);
+						arrowV->setOpacity(230);
+						arrowV->setScale(0.2);
+						arrowV->setVisible(false);
+						arrowV->setPosition(m_resourceVector[0]->getPositionX(), m_resourceVector[0]->getPositionY() + 200);
+						arrowV->setName("VerticalArrow");
+						m_gameNode->addChild(arrowV);
+
+						auto blink = Blink::create(3, 3);
+						auto hide = Hide::create();
+						arrowV->runAction(Sequence::create(blink, NULL));
+
+						auto circle = m_uiNode->getChildByName("ButtonCover");
+						circle->setPosition(m_aButtonRect.getMidX(), m_aButtonRect.getMidY());
+
+						auto blink2 = Blink::create(3, 3);
+						circle->runAction(Sequence::create(blink2, NULL));
+
+						auto animSprite = Sprite::create();
+						animSprite->setScale(1.5f);
+						animSprite->setName("TreeCutAnim");
+						animSprite->setPositionX(arrowV->getPositionX());
+						animSprite->setPositionY(arrowV->getPositionY() - 100);
+						m_gameNode->addChild(animSprite);
+
+						auto animation = Animation::create();
+						animation->addSpriteFrameWithFile("img/ui/movingIcon/cutTree01.png");
+						animation->addSpriteFrameWithFile("img/ui/movingIcon/cutTree02.png");
+						animation->setLoops(3.0f);
+						animation->setDelayPerUnit(0.5f);
+						animation->setRestoreOriginalFrame(true);
+
+						auto animate = Animate::create(animation);
+						animSprite->runAction(animate);
+					}
+					break;
+					
+					case 4:
+					{
+						auto circle = m_uiNode->getChildByName("ButtonCover");
+						m_gameNode->removeChildByName("EngineGet");
+						auto blink = Blink::create(3, 3);
+						circle->runAction(blink);
+
+						auto animSprite = Sprite::create();
+						animSprite->setScale(1.5f);
+						animSprite->setName("BattleIcon");
+						animSprite->setPositionX(m_enemy.GetStaticEnemyPos(0).x);
+						animSprite->setPositionY(m_enemy.GetStaticEnemyPos(0).y + 70.0f);
+						m_gameNode->addChild(animSprite);
+
+						auto animation = Animation::create();
+						animation->addSpriteFrameWithFile("img/ui/movingIcon/battleSwords01.png");
+						animation->addSpriteFrameWithFile("img/ui/movingIcon/battleSwords02.png");
+						animation->setLoops(3.0f);
+						animation->setDelayPerUnit(0.5f);
+						animation->setRestoreOriginalFrame(true);
+
+						auto animate = Animate::create(animation);
+						animSprite->runAction(animate);
+					}
+					break;
+
+					case 5:
+					{
+						m_gameNode->removeChildByName("TreeCutAnim");
+
+						auto arrowV = m_gameNode->getChildByName("VerticalArrow");
+						Vec2 enginePos = m_gameNode->getChildByName("engine")->getPosition();
+						arrowV->setPosition(enginePos.x, enginePos.y + 100);
+						auto blink = Blink::create(3, 3);
+						arrowV->runAction(Sequence::create(blink, NULL));
+
+						auto animSprite = Sprite::create();
+						animSprite->setScale(1.5f);
+						animSprite->setName("EngineGet");
+						animSprite->setPositionX(enginePos.x);
+						animSprite->setPositionY(enginePos.y + 50);
+						m_gameNode->addChild(animSprite);
+
+						auto animation = Animation::create();
+						animation->addSpriteFrameWithFile("img/ui/movingIcon/timeMachGet01.png");
+						animation->addSpriteFrameWithFile("img/ui/movingIcon/timeMachGet02.png");
+						animation->setLoops(3.0f);
+						animation->setDelayPerUnit(0.5f);
+						animation->setRestoreOriginalFrame(true);
+
+						auto animate = Animate::create(animation);
+						animSprite->runAction(animate);
+					}
+					break;
+
+					case 6:
+					{
+						m_gameNode->removeChildByName("BattleIcon");
+
+						auto arrow = static_cast<Sprite*>(m_uiNode->getChildByName("HorizontalArrow"));
+						arrow->setRotation(-90);
+						auto blink = Blink::create(3, 3);
+						arrow->runAction(blink);
+					}
+					break;
+
+					case 7:
+					{
+						auto arrow = static_cast<Sprite*>(m_uiNode->getChildByName("HorizontalArrow"));
+						
+						auto blink = Blink::create(3, 3);
+						arrow->runAction(blink);
+					}
+					break;
+
+					default:
+						break;
+					}
+				}
+			}
+			else if (m_age == 1)
+			{
+				if (m_stepDone)
+				{
+					m_stepDone = false;
+					auto visibleSize = Director::getInstance()->getVisibleSize();
+
+					switch (m_step)
+					{
+					case 0:
+					{
+						//WIP
+						auto animSprite = Sprite::create();
+						animSprite->setScale(1.5f);
+						animSprite->setName("EngineGet");
+						animSprite->setPositionX(m_character->getPosition().x);
+						animSprite->setPositionY(m_character->getPosition().y + 70);
+						m_gameNode->addChild(animSprite);
+
+						auto animation = Animation::create();
+						animation->addSpriteFrameWithFile("img/ui/movingIcon/exclamation01.png");
+						animation->addSpriteFrameWithFile("img/ui/movingIcon/exclamation02.png");
+						animation->setLoops(3.0f);
+						animation->setDelayPerUnit(0.5f);
+						animation->setRestoreOriginalFrame(true);
+
+						auto animate = Animate::create(animation);
+
+						auto delayAnimate = DelayTime::create(0.8f);
+
+						animSprite->runAction(Sequence::create(delayAnimate, animate, NULL));
+
+
+						//shade screen anim
+						auto shadeScreen = LayerColor::create(Color4B::BLACK);
+						shadeScreen->setOpacity(0);
+						//shadeScreen->setPosition(visibleSize.width / 2, visibleSize.height / 2);
+						this->addChild(shadeScreen);
+
+						auto waitForShade = DelayTime::create(9.0f);
+						auto showShade = FadeIn::create(1.0f);
+						shadeScreen->runAction(Sequence::create(waitForShade, showShade, NULL));
+
+						//title logo appearance
+						auto Delay = DelayTime::create(4.5f);
+						auto shortDelay = DelayTime::create(1.0f);
+						auto Fadein = FadeIn::create(3.0f);
+						auto FadeOut = FadeOut::create(1.0f);
+						auto goToTitle = CallFunc::create([this]() {this->menuCloseCallback(); });
+						auto Sequence = Sequence::create(Delay, Fadein, Delay, FadeOut, shortDelay, goToTitle, NULL);
+
+						auto TitleName = Sprite::create("img/ui/titleLogo.png");
+
+						TitleName->setPosition(Vec2(visibleSize.width / 2, visibleSize.height / 1.5));
+						TitleName->setScale(0.8f);
+						TitleName->setOpacity(0);
+						TitleName->setName("Title_Logo");
+
+						TitleName->runAction(Sequence);
+						this->addChild(TitleName);
+
+					}
+					break;
+					}
 				}
 			}
 		}
 
+		//Tutorial Home Map
 		else
 		{
-			if (m_step == 0)
+			//Prehistoric era
+			if (m_age == 0)
 			{
-				auto diff = m_npcVector[0]->getPositionX() - m_character->getPositionX();
-				if (abs(diff) <= 300)
+				auto def = UserDefault::getInstance();
+				if (!def->getBoolForKey("HasTimeMachinePart"))
 				{
-					nextStep();
-				}
-			}
-			else if (m_step == 1)
-			{
-				if (m_character->getPositionX() >= 1860 && m_character->getPositionX() <= 1950)
-				{
-					nextStep();
-				}
-			}
-			else if (m_step == 2)
-			{
-				if (m_character->getPositionX() >= 2220 && m_character->getPositionX() <= 2330)
-				{
-					nextStep();
-				}
-			}
+					/*
+					if (m_step == 0)
+					{
+						auto diff = m_npcVector[0]->getPositionX() - m_character->getPositionX();
+						if (abs(diff) <= 300)
+						{
+							nextStep();
+						}
+					}
+					
+					if (m_step == 1)
+					{
+						if (m_character->getPositionX() >= 1860 && m_character->getPositionX() <= 1950)
+						{
+							nextStep();
+						}
+					}
+					else if (m_step == 2)
+					{
+						if (m_character->getPositionX() >= 2220 && m_character->getPositionX() <= 2330)
+						{
+							nextStep();
+						}
+					}*/
 
-			if (m_stepDone)
-			{
-				m_stepDone = false;
-				auto visibleSize = Director::getInstance()->getVisibleSize();
+					if (m_stepDone)
+					{
+						m_stepDone = false;
+						auto visibleSize = Director::getInstance()->getVisibleSize();
 
-				switch (m_step)
+						switch (m_step)
+						{
+						case 0:
+						{
+							auto animSprite = Sprite::create();
+							animSprite->setScale(1.5f);
+							animSprite->setName("NotWorking");
+							animSprite->setPositionX(m_gameNode->getChildByName("timeMachine")->getPositionX());
+							animSprite->setPositionY(m_gameNode->getChildByName("timeMachine")->getPositionY() + 110.0f);
+							m_gameNode->addChild(animSprite);
+
+							auto animation = Animation::create();
+							animation->addSpriteFrameWithFile("img/ui/movingIcon/notWorking01.png");
+							animation->addSpriteFrameWithFile("img/ui/movingIcon/notWorking02.png");
+							animation->setLoops(3.0f);
+							animation->setDelayPerUnit(0.5f);
+							animation->setRestoreOriginalFrame(true);
+
+							auto animate = Animate::create(animation);
+							animSprite->runAction(animate);
+
+							auto delay = DelayTime::create(3);
+							auto nextStep = CallFunc::create([this]() {this->nextStep(); });
+							m_gameNode->runAction(Sequence::create(delay, nextStep, NULL));
+
+						}
+							break;
+						case 1:
+						{
+							auto arrow = Sprite::create("img/ui/tutorialArrow.png");
+							arrow->setRotation(90);
+							arrow->setOpacity(230);
+							arrow->setScale(0.35);
+							arrow->setPosition(visibleSize.width / 2, visibleSize.height / 1.4);
+							arrow->setName("HorizontalArrow");
+							m_uiNode->addChild(arrow);
+
+							auto delay = DelayTime::create(0.7);
+							auto blink = Blink::create(3, 3);
+							auto hide = Hide::create();
+							arrow->runAction(Sequence::create(blink, hide, NULL));
+
+							auto square1 = Sprite::create("img/ui/AttackCover.png");
+							square1->setScale(0.4);
+							square1->setOpacity(150);
+							square1->setPosition(m_JoyStick.getMidX(), m_JoyStick.getMidY());
+							square1->setName("Pad_Cover");
+							m_uiNode->addChild(square1);
+
+							auto delay2 = DelayTime::create(0.7);
+							auto blink2 = Blink::create(3, 6);
+							auto hide2 = Hide::create();
+							square1->runAction(Sequence::create(hide2, delay2, blink2, hide2, NULL));
+						}
+						break;
+						default:
+							break;
+						}
+					}
+				}
+				else
 				{
-				case 0:
+					//Go to Villager
+					if (m_step == 0)
+					{
+						auto diff = abs(m_npcVector[0]->getPositionX() - m_character->getPositionX());
+						if (abs(diff) <= 300)
+						{
+							nextStep();
+						}
+					}
+					//Go left
+					/*
+					else if (m_step == 1)
+					{
+						if (m_character->getPositionX() >= 1860 && m_character->getPositionX() <= 1950)
+						{
+							nextStep();
+						}
+					}
+					*/
+					//Go Time Machine
+					else if (m_step == 2)
+					{
+						if (m_character->getPositionX() >= m_gameNode->getChildByName("timeMachine")->getPositionX() && m_character->getPositionX() <= m_gameNode->getChildByName("timeMachine")->getPositionX() + 300)
+						{
+							nextStep();
+						}
+					}
+
+					if (m_stepDone)
+					{
+						m_stepDone = false;
+						auto visibleSize = Director::getInstance()->getVisibleSize();
+
+						switch (m_step)
+						{
+						case 0:
+						{
+							auto arrow = Sprite::create("img/ui/tutorialArrow.png");
+							arrow->setRotation(-90);
+							arrow->setOpacity(230);
+							arrow->setScale(0.35);
+							arrow->setPosition(visibleSize.width / 2, visibleSize.height / 1.4);
+							arrow->setName("HorizontalArrow");
+							m_uiNode->addChild(arrow);
+
+							auto delay = DelayTime::create(0.7);
+							auto blink = Blink::create(3, 3);
+							auto hide = Hide::create();
+							arrow->runAction(Sequence::create(hide, delay, blink, hide, NULL));
+						}
+							break;
+						case 1:
+						{
+							auto arrowV = Sprite::create("img/ui/tutorialArrow.png");
+							arrowV->setRotation(180);
+							arrowV->setOpacity(230);
+							arrowV->setScale(0.2);
+							arrowV->setVisible(false);
+							arrowV->setPosition(m_npcVector[0]->getPositionX(), m_npcVector[0]->getPositionY() + 100);
+							arrowV->setName("VerticalArrow");
+							m_gameNode->addChild(arrowV);
+
+							auto blink = Blink::create(2, 2);
+							arrowV->runAction(Sequence::create(blink, NULL));
+						}
+						break;
+
+						case 2:
+						{
+							auto arrow = m_uiNode->getChildByName("HorizontalArrow");
+
+							auto delay = DelayTime::create(0.7);
+							auto blink = Blink::create(3, 3);
+							auto hide = Hide::create();
+							arrow->runAction(Sequence::create(blink, hide, NULL));
+						}
+						break;
+
+						case 3:
+						{
+							auto arrowV = m_gameNode->getChildByName("VerticalArrow");
+							Vec2 enginePos = m_gameNode->getChildByName("timeMachine")->getPosition();
+							arrowV->setPosition(enginePos.x, enginePos.y + 100);
+							auto blink = Blink::create(3, 3);
+							arrowV->runAction(Sequence::create(blink, NULL));
+						}
+						break;
+						default:
+							break;
+						}
+					}
+				}
+
+				
+			}
+			else if (m_age == 1)
+			{
+				auto def = UserDefault::getInstance();
+				if (m_stepDone)
+				{
+					m_stepDone = false;
+					auto visibleSize = Director::getInstance()->getVisibleSize();
+
+					switch (m_step)
+					{
+					case 0:
+					{
+						auto arrow = Sprite::create("img/ui/tutorialArrow.png");
+						arrow->setRotation(90);
+						arrow->setOpacity(230);
+						arrow->setScale(0.35);
+						arrow->setPosition(visibleSize.width / 2, visibleSize.height / 1.4);
+						arrow->setName("HorizontalArrow");
+						m_uiNode->addChild(arrow);
+
+						auto delay = DelayTime::create(0.7);
+						auto blink = Blink::create(3, 3);
+						auto hide = Hide::create();
+						arrow->runAction(Sequence::create(hide, delay, blink, hide, NULL));
+					}
 					break;
-				case 1:
-				{
-					auto arrowV = Sprite::create("img/ui/tutorialArrow.png");
-					arrowV->setRotation(180);
-					arrowV->setOpacity(230);
-					arrowV->setScale(0.2);
-					arrowV->setVisible(false);
-					arrowV->setPosition(m_npcVector[0]->getPositionX(), m_npcVector[0]->getPositionY() + 100);
-					arrowV->setName("VerticalArrow");
-					m_gameNode->addChild(arrowV);
-
-					auto blink = Blink::create(2, 2);
-					arrowV->runAction(Sequence::create(blink, NULL));
-				}
-				break;
-
-				case 2:
-				{
-					auto arrow = Sprite::create("img/ui/tutorialArrow.png");
-					arrow->setRotation(90);
-					arrow->setOpacity(230);
-					arrow->setScale(0.35);
-					arrow->setPosition(visibleSize.width / 2, visibleSize.height / 1.4);
-					arrow->setName("HorizontalArrow");
-					m_uiNode->addChild(arrow);
-
-					auto delay = DelayTime::create(0.7);
-					auto blink = Blink::create(3, 3);
-					auto hide = Hide::create();
-					arrow->runAction(Sequence::create(blink, hide, NULL));
-				}
-				break;
-				case 3:
-				{
-					auto arrowV = m_gameNode->getChildByName("VerticalArrow");
-					Vec2 enginePos = m_gameNode->getChildByName("timeMachine")->getPosition();
-					arrowV->setPosition(enginePos.x, enginePos.y + 100);
-					auto blink = Blink::create(3, 3);
-					arrowV->runAction(Sequence::create(blink, NULL));
-				}
-				break;
-				default:
-					break;
-				}
+					default:
+						break;
+					}
+				}	
 			}
 		}
+	}
+
+	//battle icon above enemy update
+	auto battleSwords = m_gameNode->getChildByName("BattleIcon");
+	if (battleSwords)
+	{
+		battleSwords->setPosition(m_enemy.GetStaticEnemyPos(0).x, m_enemy.GetStaticEnemyPos(0).y + 70);
 	}
 
 	//Collision with resource icons
@@ -1300,19 +1764,22 @@ void Control3::simplePhysics()
 		auto resourceIcon = m_resourceIconVector[i];
 		if (m_character->getBoundingBox().intersectsRect(resourceIcon->getBoundingBox()))
 		{
-			resourceIcon->setVisible(false);
+			//resourceIcon->setVisible(false);
 			bool noSlot = true;
 			bool noSpace = false;
+			//bool addedOnce = false;
 			int firstVoidSlot = -1;
+			int addedSlot = 0;
 			for (int j = 0; j < sizeof(m_inventorySlot) / sizeof(m_inventorySlot[0]); ++j)
 			{
 				//Put item in the same slot
 				if (resourceIcon->getTag() == m_inventorySlot[j].itemType)
 				{
 					m_inventorySlot[j].itemAmount++;
+					addedSlot = j;
 					noSlot = false;
 				}
-				//Put item in new slot
+				//Get first void slot
 				else
 				{
 					//if void slot
@@ -1328,6 +1795,7 @@ void Control3::simplePhysics()
 				}
 			}
 
+			//Put the item in the first void slot if there is one
 			if (noSlot)
 			{
 				if (firstVoidSlot != -1)
@@ -1343,13 +1811,30 @@ void Control3::simplePhysics()
 
 			if (!noSpace)
 			{
-				m_gameNode->removeChild(resourceIcon);
 				m_resourceIconVector.erase(m_resourceIconVector.begin() + i);
+				resourceIcon->retain();
+				auto newIconPos = m_gameNode->convertToWorldSpace(resourceIcon->getPosition());
+				resourceIcon->removeFromParent();
+				m_uiNode->addChild(resourceIcon);
+				resourceIcon->setPosition(newIconPos);
+				resourceIcon->release();
+				resourceIcon->setScale(m_gameNode->getScale());
+
+				auto visibleSize = Director::getInstance()->getVisibleSize();
+				auto slot = noSlot ? firstVoidSlot : addedSlot;
+				
+				int inventoryX = (visibleSize.width / 2 - 500 + 50) + 100 * slot;
+				
+				auto moveToSlot = MoveTo::create(0.8f, Vec2(inventoryX, m_inventoryY));
+				auto removeFunc = CallFunc::create([resourceIcon]() {resourceIcon->removeFromParent(); });
+				//m_gameNode->removeChild(resourceIcon);
+
+				if (resourceIcon)
+				{
+					resourceIcon->runAction(Sequence::create(moveToSlot, removeFunc, NULL));
+				}
 			}
 
-			CCLOG("amount in slot1: %d", m_inventorySlot[0].itemAmount);
-			CCLOG("amount in slot2: %d", m_inventorySlot[1].itemAmount);
-			CCLOG("amount in slot3: %d", m_inventorySlot[2].itemAmount);
 			showItems();
 		}
 	}
@@ -1517,6 +2002,8 @@ void Control3::simplePhysics()
 		}
 	}
 
+	
+
 	//Bottom Collision detection
 	for (int i = 0; i < 3; ++i)
 	{
@@ -1526,17 +2013,17 @@ void Control3::simplePhysics()
 		{
 			if (m_character->getBoundingBox().intersectsRect(bottomTile->getBoundingBox()))
 			{
+				m_onGround = true;
+				
 				auto correctionDelta = bottomTile->getBoundingBox().getMaxY() - m_character->getBoundingBox().getMinY();
 				if (correctionDelta <= 10)
 				{
+					
 					m_character->setPositionY(m_character->getPositionY() + correctionDelta);
-					if (m_speedY < 0)
+					if (m_speedY < 10)
 					{
-						m_speedY = 0;
-						if (!m_jButtonPressed)
-						{
-							m_onGround = true;
-						}
+						if(m_speedY < 0)
+							m_speedY = 0;
 					}
 				}
 			}
@@ -1571,6 +2058,9 @@ void Control3::simplePhysics()
 	//-------------------------------
 	//---------Jumping---------------
 	//-------------------------------
+
+	
+
 	if (m_jButtonPressed)
 	{
 		if (m_onGround && !m_jumpInstanced)
@@ -1646,32 +2136,40 @@ void Control3::simplePhysics()
 void Control3::playerAnimationCache()
 {
 	auto walking = Animation::create();
-	walking->addSpriteFrameWithFileName("img/sprites/player/walk1.png");
-	walking->addSpriteFrameWithFileName("img/sprites/player/walk2.png");
-	walking->addSpriteFrameWithFileName("img/sprites/player/walk3.png");
-	walking->addSpriteFrameWithFileName("img/sprites/player/walk4.png");
+	walking->addSpriteFrameWithFileName("img/sprites/player/newCharacter/walk1.png");
+	walking->addSpriteFrameWithFileName("img/sprites/player/newCharacter/walk2.png");
+	walking->addSpriteFrameWithFileName("img/sprites/player/newCharacter/walk3.png");
+	walking->addSpriteFrameWithFileName("img/sprites/player/newCharacter/walk4.png");
 	walking->setLoops(1);
 	walking->setDelayPerUnit(0.1);
 
 	auto idle = Animation::create();
-	idle->addSpriteFrameWithFileName("img/sprites/player/idle1.png");
-	idle->addSpriteFrameWithFileName("img/sprites/player/idle2.png");
-	idle->addSpriteFrameWithFileName("img/sprites/player/idle3.png");
+	idle->addSpriteFrameWithFileName("img/sprites/player/newCharacter/idle1.png");
+	idle->addSpriteFrameWithFileName("img/sprites/player/newCharacter/idle2.png");
+	idle->addSpriteFrameWithFileName("img/sprites/player/newCharacter/idle3.png");
 	idle->setLoops(1);
 	idle->setDelayPerUnit(0.2);
 
 	auto swing = Animation::create();
-	swing->addSpriteFrameWithFileName("img/sprites/player/swing2.png");
-	swing->addSpriteFrameWithFileName("img/sprites/player/swing1.png");
-	swing->addSpriteFrameWithFileName("img/sprites/player/swing3.png");
-	swing->addSpriteFrameWithFileName("img/sprites/player/swing4.png");
+	swing->addSpriteFrameWithFileName("img/sprites/player/newCharacter/swing2.png");
+	swing->addSpriteFrameWithFileName("img/sprites/player/newCharacter/swing1.png");
+	swing->addSpriteFrameWithFileName("img/sprites/player/newCharacter/swing3.png");
+	swing->addSpriteFrameWithFileName("img/sprites/player/newCharacter/swing4.png");
 	swing->setLoops(1);
 	swing->setDelayPerUnit(0.085);
+
+	auto jump = Animation::create();
+	jump->addSpriteFrameWithFileName("img/sprites/player/newCharacter/jump3.png");
+	jump->addSpriteFrameWithFileName("img/sprites/player/newCharacter/jump3.png");
+
+	jump->setLoops(1);
+	jump->setDelayPerUnit(0.2f);
 
 	m_playerAnimCache = AnimationCache::getInstance();
 	m_playerAnimCache->addAnimation(walking, "walking");
 	m_playerAnimCache->addAnimation(idle, "idle");
 	m_playerAnimCache->addAnimation(swing, "swing");
+	m_playerAnimCache->addAnimation(jump, "jump");
 }
 
 void Control3::changeArea(bool right)
@@ -1679,6 +2177,7 @@ void Control3::changeArea(bool right)
 	m_onNext = true;
 	auto def = UserDefault::getInstance();
 	auto area = def->getIntegerForKey("MapArea");
+	def->setBoolForKey("FromMenu", false);
 	
 	if (right)
 	{
@@ -1707,7 +2206,15 @@ void Control3::changeArea(bool right)
 		def->setBoolForKey("FromRight", false);
 	}
 	def->setIntegerForKey("MapArea", area);
+	def->flush();
+	
+	auto resetScene = CallFunc::create([this]() {this->resetScene(); });
+	this->runAction(resetScene);
+}
 
+void Control3::resetScene()
+{
+	auto def = UserDefault::getInstance();
 	def->setIntegerForKey("inventorySlotType01", m_inventorySlot[0].itemType);
 	def->setIntegerForKey("inventorySlotType02", m_inventorySlot[1].itemType);
 	def->setIntegerForKey("inventorySlotType03", m_inventorySlot[2].itemType);
@@ -1733,12 +2240,7 @@ void Control3::changeArea(bool right)
 	def->setIntegerForKey("hp", m_hp);
 
 	def->flush();
-	auto resetScene = CallFunc::create([this]() {this->resetScene(); });
-	this->runAction(resetScene);
-}
 
-void Control3::resetScene()
-{
 	auto scene = Control3::createScene();
 	Director::getInstance()->replaceScene(scene);
 }
@@ -1993,8 +2495,10 @@ void Control3::npcAI()
 
 			m_npcVector[i]->stopAllActions();
 			m_npcVector[i]->setRotation(0);
-
-			popUp(m_npcVector[i]);
+			if (m_npcStateVector[i].buildingNum1 == !buildingData::BUILDING_NONE)
+			{
+				popUp(m_npcVector[i]);
+			}
 		}
 
 		if (m_npcStateVector[i].stateID == NPC_STATE_WALKING)
@@ -2046,7 +2550,6 @@ void Control3::npcAI()
 				auto buildingObject = m_tilemap->getObjectGroup("player")->getObject("Building");
 				auto posX = buildingObject["x"].asFloat();
 				auto diff = m_npcVector[i]->getPositionX() - posX;
-				CCLOG("Diff: %f", diff);
 				m_npcStateVector[i].directionRight = true;
 				//Determine the npc direction.
 				if (diff > 0)
@@ -2119,7 +2622,9 @@ void Control3::receivePlayerDamage()
 		auto delay = DelayTime::create(0.1);
 		auto tintBack = TintTo::create(0.05, Color3B::WHITE);
 		m_character->runAction(Sequence::create(tintRed, delay, tintBack, NULL));
-		CCLOG("knock back!");
+
+		m_effects->ShakeNode(m_character);
+		m_effects->TickScreenWithColor(1, Color3B::RED);
 	}
 }
 
@@ -2160,6 +2665,7 @@ void Control3::createBuilding(float posX, float npcfootY)
 	m_gameNode->addChild(effectSprite);
 
 	auto effectAnim = Animation::create();
+	/*
 	effectAnim->addSpriteFrameWithFile("img/effects/buildingEffect/building_effect_000.png");
 	effectAnim->addSpriteFrameWithFile("img/effects/buildingEffect/building_effect_001.png");
 	effectAnim->addSpriteFrameWithFile("img/effects/buildingEffect/building_effect_002.png");
@@ -2170,9 +2676,17 @@ void Control3::createBuilding(float posX, float npcfootY)
 	effectAnim->addSpriteFrameWithFile("img/effects/buildingEffect/building_effect_007.png");
 	effectAnim->addSpriteFrameWithFile("img/effects/buildingEffect/building_effect_008.png");
 	effectAnim->addSpriteFrameWithFile("img/effects/buildingEffect/building_effect_009.png");
+	*/
+	effectAnim->addSpriteFrameWithFile("img/effects/buildingEffect/dust1.png");
+	effectAnim->addSpriteFrameWithFile("img/effects/buildingEffect/dust2.png");
+	effectAnim->addSpriteFrameWithFile("img/effects/buildingEffect/dust3.png");
+	effectAnim->addSpriteFrameWithFile("img/effects/buildingEffect/dust4.png");
+	effectAnim->addSpriteFrameWithFile("img/effects/buildingEffect/dust5.png");
+	effectAnim->addSpriteFrameWithFile("img/effects/buildingEffect/dust6.png");
+
 	effectAnim->setDelayPerUnit(0.3f);
 	effectAnim->setRestoreOriginalFrame(true);
-	effectAnim->setLoops(4);
+	effectAnim->setLoops(6);
 
 	auto effectAnimAction = Animate::create(effectAnim);
 	effectSprite->runAction(effectAnimAction);
@@ -2208,8 +2722,13 @@ void Control3::createBuilding(float posX, float npcfootY)
 	completedAnim->setLoops(2);
 
 	auto completedAction = Animate::create(completedAnim);
+	CallFunc* nextStep = CallFunc::create([]() {});
+	if (m_age == 0 && m_isTutorial)
+	{
+		nextStep = CallFunc::create([this]() {this->nextStep(); });
+	}
 	auto delay = DelayTime::create(12.0f);
-	completedSprite->runAction(Sequence::create(delay, completedAction, NULL));
+	completedSprite->runAction(Sequence::create(delay, completedAction, nextStep, NULL));
 }
 
 void Control3::update(float dt)
@@ -2236,20 +2755,40 @@ void Control3::update(float dt)
 		}
 
 		//dmg calc
-		m_enemy.receiveDamage(false);
+		m_enemy.receiveDamage(false, m_effects);
 		receivePlayerDamage();
 
 		updateHPBar();
+		//if the map is the last scene of the tutorial
+		if (m_age == 1 && m_isTutorial && !m_isTutorialHome)
+		{
 
-		m_background.UpdateBackground(setViewpoint(m_character->getPosition()), m_timeOfDay);
-	}
-	
-	m_timeOfDay++;
+			m_background.UpdateBackground(setViewpoint(m_gameNode->getChildByName("tutorialCameraEye")->getPosition()), m_timeOfDay);
+		}
+		else
+		{
+			m_background.UpdateBackground(setViewpoint(m_character->getPosition()), m_timeOfDay);
+		}
+		
 
-	//25 min reset
-	if (m_timeOfDay >= MAX_TIME_DAY)
-	{
-		m_timeOfDay = 0;
+		m_timeOfDay++;
+
+		//25 min reset
+		if (m_timeOfDay >= MAX_TIME_DAY)
+		{
+			m_timeOfDay = 0;
+		}
+
+		if (m_gameNode->getChildByName("tutorialCameraEye"))
+		{
+			static float incremental = 0;
+			incremental += 0.01f;
+			if (incremental >= 8.400097f)
+			{
+				incremental = 0;
+			}
+			m_gameNode->getChildByName("tutorialCameraEye")->setPositionX(m_gameNode->getChildByName("tutorialCameraEye")->getPositionX() + incremental);
+		}
 	}
 }
 
@@ -2271,7 +2810,8 @@ void Control3::onTouchesBegan(const std::vector<cocos2d::Touch*>& touch, cocos2d
 					walk(true, m_character);
 					m_directionRight = true;
 					m_standing = false;
-					m_animationInstanced = false;
+					if(m_onGround)
+						m_animationInstanced = false;
 					m_moveTouchID = t->getID();
 					JoyStick->setPosition(visibleSize.width / 10 * 1.8, visibleSize.height / 6);
 				}
@@ -2284,7 +2824,8 @@ void Control3::onTouchesBegan(const std::vector<cocos2d::Touch*>& touch, cocos2d
 					walk(false, m_character);
 					m_directionRight = false;
 					m_standing = false;
-					m_animationInstanced = false;
+					if(m_onGround)
+						m_animationInstanced = false;
 					m_moveTouchID = t->getID();
 					JoyStick->setPosition(visibleSize.width / 10 * 1.2, visibleSize.height / 6);
 				}
@@ -2302,6 +2843,7 @@ void Control3::onTouchesBegan(const std::vector<cocos2d::Touch*>& touch, cocos2d
 			if (touchPoint.intersectsRect(m_jButtonRect))
 			{
 				m_jButtonPressed = true;
+				m_animationInstanced = false;
 				m_jumpTouchID = t->getID();
 			}
 
@@ -2470,8 +3012,20 @@ void Control3::onTouchesBegan(const std::vector<cocos2d::Touch*>& touch, cocos2d
 						{
 							if (m_inventorySlot[i].itemType == APPLE)
 							{
+								//Healing
 								m_inventorySlot[i].itemAmount--;
-								m_hp += 20;
+								
+								//heal for 5 seconds,
+								auto delayPerTick = DelayTime::create(0.5f);
+								auto healFunc = CallFunc::create([this]() {this->m_hp += 100; });
+								auto healingSequence = Sequence::create(healFunc, delayPerTick, NULL);
+								auto loop = Repeat::create(healingSequence, 1);
+								this->runAction(loop);
+
+								//tick effect for 5 seconds with green color
+								m_effects->TickScreenWithColor(2, Color3B(10, 255, 10));
+
+								//m_hp += 100;
 								showItems();
 							}
 						}
@@ -2503,7 +3057,8 @@ void Control3::onTouchesMoved(const std::vector<cocos2d::Touch*>& touch, cocos2d
 						walk(true, m_character);
 						m_directionRight = true;
 						m_standing = false;
-						m_animationInstanced = false;
+						if(m_onGround)
+							m_animationInstanced = false;
 						m_moveTouchID = t->getID();
 						//ジョイスティックpos移動
 						JoyStick->setPosition(visibleSize.width / 10 * 1.8, visibleSize.height / 6);
@@ -2519,7 +3074,8 @@ void Control3::onTouchesMoved(const std::vector<cocos2d::Touch*>& touch, cocos2d
 						walk(false, m_character);
 						m_directionRight = false;
 						m_standing = false;
-						m_animationInstanced = false;
+						if (m_onGround)
+							m_animationInstanced = false;
 						m_moveTouchID = t->getID();
 						//ジョイスティックpos移動
 						JoyStick->setPosition(visibleSize.width / 10 * 1.2, visibleSize.height / 6);
@@ -2533,7 +3089,8 @@ void Control3::onTouchesMoved(const std::vector<cocos2d::Touch*>& touch, cocos2d
 				if (m_standing == false)
 				{
 					m_standing = true;
-					m_animationInstanced = false;
+					if (m_onGround)
+						m_animationInstanced = false;
 					m_moveTouchID = -1;
 					//ジョイスティックpos移動
 					JoyStick->setPosition(visibleSize.width / 10 * 1.5, visibleSize.height / 6);
@@ -2555,7 +3112,8 @@ void Control3::onTouchesEnded(const std::vector<cocos2d::Touch*>& touch, cocos2d
 			if (t->getID() == m_moveTouchID)
 			{
 				m_standing = true;
-				m_animationInstanced = false;
+				if (m_onGround)
+					m_animationInstanced = false;
 				m_moveTouchID = -1;
 				JoyStick->setPosition(visibleSize.width / 10 * 1.5, visibleSize.height / 6);
 			}
@@ -2578,6 +3136,18 @@ void Control3::menuCloseCallback()
 {
 	auto scene = TitlleScene::createScene();
 	Director::getInstance()->replaceScene(scene);
+}
+
+void Control3::nextAge()
+{
+	auto def = UserDefault::getInstance();
+	if (m_age == 0)
+		m_age++;
+	else
+		m_age--;
+
+	def->setIntegerForKey("AgeNumber", m_age);
+	def->flush();
 }
 
 void Control3::nextStep()

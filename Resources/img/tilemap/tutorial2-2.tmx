@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<map version="1.0" orientation="orthogonal" renderorder="right-up" width="200" height="41" tilewidth="32" tileheight="32" nextobjectid="41">
+ <tileset firstgid="1" name="Forest_sprite" tilewidth="32" tileheight="32" tilecount="128" columns="16">
+  <image source="Forest_sprite.png" width="512" height="256"/>
+ </tileset>
+ <objectgroup name="player">
+  <object id="2" name="NextRight" x="2748.67" y="1086.67" width="34" height="32"/>
+  <object id="34" name="Spawn" x="1110.33" y="1031.48" width="69.697" height="59.52"/>
+  <object id="37" name="TimeMachine" x="938" y="976" width="66" height="64"/>
+  <object id="38" name="Building" x="2064.67" y="1020.67" width="93.3333" height="102.667"/>
+ </objectgroup>
+ <layer name="base" width="200" height="41">
+  <data encoding="base64" compression="zlib">
+   eJzt2sENgCAQRFFi7L9mC9CBA8YV8l4yFbD/RmsAAAAAAAAAAAAAAAAAAABwdw52dAa7G/XRG+xOH5DpA57NtKEPdqcPyPQBmT4g0wdk+oBMH5DpAzJ9QKYPyPQB2Wwfvb/v9t6oMduHfTNqVb+/6WMF1Xdg+lhB9T2YPv6u+iZMGxUuTo4Mjw==
+  </data>
+ </layer>
+ <layer name="deco" width="200" height="41">
+  <data encoding="base64" compression="zlib">
+   eJztwYEAAAAAw6D5Ux/hAlUBAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAM8AgCAAAQ==
+  </data>
+ </layer>
+ <layer name="grass2" width="200" height="41">
+  <data encoding="base64" compression="zlib">
+   eJztzLEJACEURMFfhA0INqAdeP0XdQYGYmqkzMBjs40AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAOAGeamM2tw9ItLcevjTR9/hBwAAAADwjh8i1QI2
+  </data>
+ </layer>
+ <layer name="grass" width="200" height="41">
+  <data encoding="base64" compression="zlib">
+   eJztw7ENAAAEADCDT/z/oziBydAmjQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA4IM85K4WAQAAAABGA2QxAbY=
+  </data>
+ </layer>
+ <layer name="col" width="200" height="41">
+  <data encoding="base64" compression="zlib">
+   eJzt0iEOgEAQBEG+d///EKrVWIKAqmTtis5c1zPOQ3++RBNiC0sTYgtLE2ILSxNiC0sTYgtLE2ILSxNiC0sTYgtLE2ILSxNiC0sTYgtLE2ILSxNiC0sTYgtLE2ILSxNiC0sTYgtLE2ILSxNiC0sTYgtLE2ILSxNiC0sTYgtLE2ILSxNiC0sTYgtLE2ILSxNiC0sTYgtLE2ILSxNiC0sTYgtLE2ILSxNiC0sTctxrBwAAAPAnN6UqLeo=
+  </data>
+ </layer>
+ <objectgroup name="bg">
+  <object id="40" name="screenLimit" x="5960" y="754" width="74" height="70"/>
+ </objectgroup>
+ <layer name="floor" width="200" height="41">
+  <data encoding="base64" compression="zlib">
+   eJztxsEJACAQBDHrVStQi3eLEB9HAgPTGgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAlfQ00iz28MJKO51iDwAAAMAfF6FKMIU=
+  </data>
+ </layer>
+</map>
