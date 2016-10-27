@@ -10,13 +10,16 @@ public:
 	~ParallaxBackground();
 
 	//Initializes class getting the ground position and current game time.
-	void Init(cocos2d::Vec2 initialPos, float currentTime, cocos2d::Size visibleSize, cocos2d::Node* gameNode, int maxDayTime, int cloudDensity, float maxMapWidth);
+	void Init(cocos2d::Vec2 initialPos, float currentTime, cocos2d::Size visibleSize, cocos2d::Node* gameNode, int maxDayTime, int cloudDensity, float maxMapWidth, int weatherType);
 	//Adds a new layer of background to the background/data vector.
 	void AddParallaxLayer(std::string filePath, float scrollVel, cocos2d::Vec2 initialPos, float scale, int depthLevel);
 	//Updates each background with it's respective modifications.
 	void UpdateBackground(cocos2d::Vec2 cameraPos, int timeOfDay);
 
+	void SetCloudLevelRange(int min, int max);
+
 	cocos2d::Node* GetBackgroundNode();
+	cocos2d::Node* GetFrontNode();
 	cocos2d::Node* GetSkyNode();
 	cocos2d::Sprite* GetShadeSprite();
 
@@ -63,9 +66,16 @@ private:
 	cocos2d::Node* m_backgroundNode;
 	//Node that will be added to the scene. This Node is the parent of all celestial bodies. (sky, sun, moon)
 	cocos2d::Node* m_skyNode;
+	//Noda that will be added to the scene. This Node does show on top of everything, covering thing behind it.
+	cocos2d::Node* m_frontNode;
 
 	float m_visibleSizeX;
 	float m_visibleSizeY;
+
+	int m_sfxID;
+
+	//0 - rain, 1 - sand storm
+	int m_weatherType;
 
 	//max seconds in a day
 	int m_maxDayTime; //(60 frames per sec)
@@ -100,6 +110,10 @@ private:
 	//Number of clouds depending on the cloud density
 	int m_cloudNumber;
 
+	//cloud range for random cloud level generation
+	int m_cloudLevelMin;
+	int m_cloudLevelMax;
+
 	//Cloud node (moves along with the camera)
 	//Each cloud level has it's own alpha to create cloud illusion.
 	//Near cloud Node
@@ -125,6 +139,7 @@ private:
 	cocos2d::Sprite* m_sun;
 	cocos2d::Sprite* m_moon;
 	cocos2d::Sprite* m_stars;
+	cocos2d::ParticleSystemQuad* m_weather;
 
 	//Night Shade. Updates by time changing its shade.
 	cocos2d::LayerColor* m_nightShade;

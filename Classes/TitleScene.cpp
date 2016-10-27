@@ -1,5 +1,6 @@
 ﻿#include "TitleScene.h"
 #include "ControlTesting03.h"
+#include "MangaCutScene.h"
 #include "GameData.h"
 #include "Option.h"
 
@@ -60,7 +61,6 @@ bool TitlleScene::init()
 
 	m_DayTime = 3600;
 
-
 	//‹ó‚ÌƒXƒvƒ‰ƒCƒg(ƒJƒƒ‰—p)
 	auto empty_Sprite = Sprite::create();
 	auto spawn_obj = m_tilemap->getObjectGroup("player")->getObject("Spawn");
@@ -69,7 +69,7 @@ bool TitlleScene::init()
 	m_gameNode->addChild(empty_Sprite);
 
 	//Ž‹“_  
-	m_background.Init(empty_Sprite->getPosition(), m_DayTime, visibleSize, m_gameNode, 7200, 3, 3000);
+	m_background.Init(empty_Sprite->getPosition(), m_DayTime, visibleSize, m_gameNode, 7200, 3, 3000, 0);
 
 	//background i‰_‚Æ‚©j
 	auto backgroundGroup = m_tilemap->getObjectGroup("bg");
@@ -143,53 +143,8 @@ bool TitlleScene::init()
 	// add the label as a child to this layer
 	//this->addChild(label, 1);
 
-
 	def->setIntegerForKey("MapArea", 0);
 
-	def->setBoolForKey("FromRight", true);
-	for (int i = 0; i < 14; ++i)
-	{
-		def->setIntegerForKey(mapData::leftMap[i].c_str(), 1);
-		def->setIntegerForKey(mapData::rightMap[i].c_str(), 1);
-	}
-
-	for (int i = 0; i < 10; ++i)
-	{
-		auto randomArea = RandomHelper::random_int(1, 1);
-		def->setIntegerForKey(mapData::cicleMap[i].c_str(), randomArea);
-	}
-
-	def->setIntegerForKey(mapData::cicleMap[0].c_str(), 0);
-
-	def->setBoolForKey("tutorial", true);
-
-	//def->setIntegerForKey(mapData::rightMap[2].c_str(), 3);
-
-	def->setIntegerForKey("inventorySlotType01", 0);
-	def->setIntegerForKey("inventorySlotType02", 0);
-	def->setIntegerForKey("inventorySlotType03", 0);
-	def->setIntegerForKey("inventorySlotType04", 0);
-	def->setIntegerForKey("inventorySlotType05", 0);
-	def->setIntegerForKey("inventorySlotType06", 0);
-	def->setIntegerForKey("inventorySlotType07", 0);
-	def->setIntegerForKey("inventorySlotType08", 0);
-	def->setIntegerForKey("inventorySlotType09", 0);
-	def->setIntegerForKey("inventorySlotType10", 0);
-
-	def->setIntegerForKey("inventorySlotAmount01", 0);
-	def->setIntegerForKey("inventorySlotAmount02", 0);
-	def->setIntegerForKey("inventorySlotAmount03", 0);
-	def->setIntegerForKey("inventorySlotAmount04", 0);
-	def->setIntegerForKey("inventorySlotAmount05", 0);
-	def->setIntegerForKey("inventorySlotAmount06", 0);
-	def->setIntegerForKey("inventorySlotAmount07", 0);
-	def->setIntegerForKey("inventorySlotAmount08", 0);
-	def->setIntegerForKey("inventorySlotAmount09", 0);
-	def->setIntegerForKey("inventorySlotAmount10", 0);
-	def->setIntegerForKey("hp", 1000);
-
-	def->setBoolForKey("HasTimeMachinePart", false);
-	def->setIntegerForKey("AgeNumber", 0);
 	def->setBoolForKey("FromMenu", true);
 
 	def->flush();
@@ -322,7 +277,11 @@ void TitlleScene::ButtonCreate()
 		else if (i == 3)
 		{
 			button[i]->setPosition(Vec2((set_posX / 1.5) + visibleSize.width * 1.3, visibleSize.height / 1.75));
-			button[i]->setColor(Color3B(100, 100, 100));
+			auto def = UserDefault::getInstance();
+			if (def->getBoolForKey("SavedGame") == false)
+			{
+				button[i]->setColor(Color3B(100, 100, 100));
+			}
 		}
 	}
 }
@@ -423,7 +382,6 @@ void TitlleScene::option()
 	button->setTag(option_back_button);
 	//ƒ^ƒbƒ`‚ð—LŒø‚É
 	button->addTouchEventListener(CC_CALLBACK_2(TitlleScene::touchEvent, this));
-
 }
 
 
@@ -438,7 +396,6 @@ void TitlleScene::menuCloseCallback(Ref* pSender)
 
 void TitlleScene::menuTransitionCallback(cocos2d::Ref* pSender, int index)
 {
-
 	Scene* scene = nullptr;
 	switch (index)
 	{
@@ -449,7 +406,9 @@ void TitlleScene::menuTransitionCallback(cocos2d::Ref* pSender, int index)
 			//scene = Control2::createScene();
 		break;
 	case 2: //index 2
+	{
 		scene = Control3::createScene();
+	}
 		break;
 	default:
 		break;
@@ -500,14 +459,95 @@ void TitlleScene::touchEvent(Ref *pSender, cocos2d::ui::Widget::TouchEventType t
 
 			title_logo->runAction(Spawn::create(Title_scale, Title_move, NULL));
 			empty_sprite->runAction(move_up);
-
 		}
 		break;
-		case	2:
+		case	2: //NEW GAME----------------------------------------------------------------------------------------------------------------
+			
 			//‰‚ß‚©‚ç
-			Director::getInstance()->replaceScene(Control3::createScene());
+			def->setBoolForKey("firstTimeTutorial", true);
+
+			def->setBoolForKey("SavedGame", false);
+
+			for (int i = 0; i < 40; ++i)
+			{
+				def->setIntegerForKey(mapData::buildingMap[i].c_str(), 0);
+			}
+
+			//place some buildings by default in a established position
+			def->setIntegerForKey(mapData::buildingMap[24].c_str(), buildingData::TIME_MACHINE01);
+			def->setIntegerForKey(mapData::buildingMap[8].c_str(), buildingData::HOUSE);
+
+			def->setBoolForKey("tutorial", true);
+
+			def->setIntegerForKey("timeOfDay", 35000);
+
+			def->setIntegerForKey("inventorySlotType01", 0);
+			def->setIntegerForKey("inventorySlotType02", 0);
+			def->setIntegerForKey("inventorySlotType03", 0);
+			def->setIntegerForKey("inventorySlotType04", 0);
+			def->setIntegerForKey("inventorySlotType05", 0);
+			def->setIntegerForKey("inventorySlotType06", 0);
+			def->setIntegerForKey("inventorySlotType07", 0);
+			def->setIntegerForKey("inventorySlotType08", 0);
+			def->setIntegerForKey("inventorySlotType09", 0);
+			def->setIntegerForKey("inventorySlotType10", 0);
+
+			def->setIntegerForKey("inventorySlotAmount01", 0);
+			def->setIntegerForKey("inventorySlotAmount02", 0);
+			def->setIntegerForKey("inventorySlotAmount03", 0);
+			def->setIntegerForKey("inventorySlotAmount04", 0);
+			def->setIntegerForKey("inventorySlotAmount05", 0);
+			def->setIntegerForKey("inventorySlotAmount06", 0);
+			def->setIntegerForKey("inventorySlotAmount07", 0);
+			def->setIntegerForKey("inventorySlotAmount08", 0);
+			def->setIntegerForKey("inventorySlotAmount09", 0);
+			def->setIntegerForKey("inventorySlotAmount10", 0);
+			def->setIntegerForKey("hp", 1000);
+
+			def->setBoolForKey("HasTimeMachinePart", false);
+			def->setBoolForKey("HasTimeMachinePart1", false);
+			def->setBoolForKey("HasTimeMachinePart2", false);
+			def->setBoolForKey("HasTimeMachinePart3", false);
+
+			def->setIntegerForKey("AgeNumber", 0);
+
+			def->setIntegerForKey("gold", 0);
+
+			def->setIntegerForKey("contractState", 0);
+			def->setIntegerForKey("contractCount", 0);
+			def->setIntegerForKey("contractLevel", 0);
+			def->setIntegerForKey("contractArea", 0);
+			def->setIntegerForKey("collectSlot1", 0);
+			def->setIntegerForKey("collectSlot2", 0);
+			def->setIntegerForKey("collectSlot3", 0);
+			def->setIntegerForKey("collectSlot4", 0);
+			def->setIntegerForKey("collectSlot5", 0);
+			def->setIntegerForKey("collectSlotCount1", 0);
+			def->setIntegerForKey("collectSlotCount2", 0);
+			def->setIntegerForKey("collectSlotCount3", 0);
+			def->setIntegerForKey("collectSlotCount4", 0);
+			def->setIntegerForKey("collectSlotCount5", 0);
+
+			def->setIntegerForKey("trueEnding", 0);
+			def->setIntegerForKey("happyEnding", 0);
+			def->setIntegerForKey("goodEnding", 0);
+			def->setIntegerForKey("badEnding", 0);
+			def->setIntegerForKey("worstEnding", 0);
+
+			def->setIntegerForKey("MapArea", 0);
+
+			def->setBoolForKey("HasBuiltBase", false);
+
+			def->flush();
+
+			Director::getInstance()->replaceScene(MangaScene::createScene());
+			
 			break;
-		case	3:
+		case	3: //CONTINUE GAME-----------------------------------------------------------------------------------------------------------
+			if (def->getBoolForKey("SavedGame"))
+			{
+				Director::getInstance()->replaceScene(Control3::createScene());
+			}
 			//‘±‚«‚©‚ç
 			break;
 		case	4:

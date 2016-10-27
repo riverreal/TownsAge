@@ -2,11 +2,16 @@
 #define __Control3_H__
 
 #include "cocos2d.h"
+#include "ui/CocosGUI.h"
 #include <vector>
 #include "GameData.h"
 #include "Enemy.h"
 #include "ParallaxBackground.h"
 #include "Effect.h"
+#include "SimpleAudioEngine.h"
+#include "Ending.h"
+
+#pragma execution_character_set("utf-8");
 
 class Control3 : public cocos2d::Layer
 {
@@ -27,15 +32,31 @@ public:
 	void simplePhysics(); //will go inside update
 	void playerAnimationCache();
 
-	void changeArea(bool right);
+	void changeArea(int area);
 	void resetScene();
 	void finishActionInstance();
-	void spreadResource();
+	void spreadResource(std::string name, cocos2d::Vec2 originPos);
 	void swingPlayer(int swingType);
-	void showItems();
+	void showItems(float invX, float invY);
 	void updateHPBar();
 
+	void enterBuildMode();
+	void exitBuildMode();
+	void moveBuildMode(bool right);
+	void confirmBuildMode();
+
+	void renderBuildings();
+
 	void equipmentCache();
+	void addItemsToInventory(std::vector<int> itemList, std::vector<int> itemCountList);
+	void addItemToInventory(int item, int count);
+
+	void resetContractCollect();
+
+	//assign the parameter points depending on the building type
+	void assignEndingParameters(int buildingType);
+
+	void confirmCrafting();
 
 	void npcAI();
 	void spawnNPC(int npcNumber);
@@ -47,9 +68,14 @@ public:
 
     // a selector callback
     void menuCloseCallback();
+
+	void popUpMsg(int msgType);
+	void closeMsg();
 	
 	void nextAge();
 	void nextStep();
+
+	void saveGame();
     
 	//controls
 	void onTouchesBegan(const std::vector<cocos2d::Touch*>& touch, cocos2d::Event* eventt);
@@ -66,6 +92,18 @@ private:
 		SWING_AXE,
 		SWING_SWORD,
 		SWING_PICK
+	};
+
+	enum MSG_TYPE
+	{
+		MSG_CONFIRM,
+		MSG_TUTORIAL,
+		MSG_CHANGE_MAP,
+		MSG_BUILD_MODE,
+		MSG_BUILDING_EFFECT,
+		MSG_CRAFTING,
+		MSG_CONTRACT,
+		MSG_TMP
 	};
 
 	struct PlayerInventory
@@ -88,6 +126,24 @@ private:
 		int itemAmount;
 	};
 
+	struct BuildingSlot
+	{
+	public:
+		BuildingSlot(bool constructable, int buildingType)
+			:constructable(constructable), buildingType(buildingType)
+		{
+		}
+
+		BuildingSlot()
+			:constructable(true), buildingType(0), sprite(nullptr)
+		{
+		}
+
+		bool constructable;
+		int buildingType;
+		cocos2d::Sprite* sprite;
+	};
+
 	struct NPCStates
 	{
 	public:
@@ -97,7 +153,7 @@ private:
 			isBuilding(false),
 			isTalking(false),
 			stateDuration(1.0f),
-			npcType(NPC_TYPE_GIRL1),
+			npcType(NPC_TYPE_CAVE_GIRL1),
 			directionRight(false),
 			timeCounter(0),
 			firstTimeState(true),
@@ -160,7 +216,7 @@ private:
 	Enemy m_enemy;
 	//Parallax Background class
 	ParallaxBackground m_background;
-
+	bool m_bgEnabled;
 	//Effect Class
 	Effect* m_effects;
 
@@ -184,12 +240,31 @@ private:
 	bool m_isCreatedPopUp;
 	bool m_isCreatedActionPopUp;
 	int m_talkChecker;
+	int m_interactingBuildingType;
+	bool m_isCrafting;
+	bool m_isCraftingTouch;
+
+	//Stores the player position before the build mode stars to reset the viewpoint back to the player position correctly.
+	cocos2d::Vec2 m_playerPosPreBuildMode;
+
+	std::vector<BuildingSlot> m_buildingsVector;
+
+	//Areas that area shown in the area selection menu (stored as int, the type of area)
+	std::vector<int> m_accesibleAreas;
 
 	bool m_disableGame;
+	bool m_isPopUpMsg;
 
 	//game timer
 	float m_timeOfDay;
 	int m_frameCounter;
+
+	//Ending Parameters (5)
+	int m_trueEnding;
+	int m_happyEnding;
+	int m_goodEnding;
+	int m_badEnding;
+	int m_worstEnding;
 
 	//Control related
 	cocos2d::Rect m_rightRect;
@@ -241,8 +316,30 @@ private:
 	bool m_swinging;
 	bool m_attackOnce;
 	bool m_animationInstanced;
-
+	int m_buildingSlots;
+	float m_groundLevel;
+	float m_buildingStart;
+	float m_buildingEnd;
+	int m_slotSize;
 	float m_inventoryY;
+	float m_inventoryX;
+
+	//contract variables
+	//3 states: contract available / in-contract / contract finished
+	int m_contractState;
+	//this determines the duration and price of the contract
+	int m_contractLevel;
+	//counter that checks if contract duration is passed
+	int m_contractTime;
+	//
+	int m_contractArea;
+	int m_contractBuildingCount;
+	//max number of items per collect is 5
+	std::string m_contractCollectSave[5] = {"collectSlot1", "collectSlot2" , "collectSlot3" , "collectSlot4" , "collectSlot5" };
+	std::string m_contractCollectCountSave[5] = { "collectSlotCount1", "collectSlotCount2" , "collectSlotCount3" , "collectSlotCount4" , "collectSlotCount5" };
+	std::vector<PlayerInventory> m_contractCollect;
+
+	bool m_fromContract;
 
 	//player variables
 	float m_speedX;
@@ -253,16 +350,27 @@ private:
 	int m_damage;
 	int m_hp;
 
+	int m_craftingResource1;
+	int m_craftingResource2;
+
 	bool m_isTutorialHome;
 	bool m_isTutorial;
 	bool m_stepDone;
 	int m_step;
 	bool m_inTimeMachine;
+	int m_buildingModeIndex;
+	//ui flags
+	bool m_isUIEnabled;
+	bool m_isMoveUIEnabled;
+	bool m_isJumpUIEnabled;
+	bool m_isActionUIEnabled;
+	bool m_isItemUIEnabled;
 
 	//ボタン配置、サイズ関係置き場
 	bool _ButtonSwap;
 
 	PlayerInventory m_inventorySlot[10];
+	int m_gold;
 };
 
 #endif // __Control3_H__

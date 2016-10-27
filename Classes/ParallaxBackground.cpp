@@ -1,5 +1,7 @@
 #include "ParallaxBackground.h"
 #include <math.h>
+#include "SimpleAudioEngine.h"
+#include "DamageHandler.h"
 
 using namespace cocos2d;
 using namespace std;
@@ -12,9 +14,10 @@ ParallaxBackground::~ParallaxBackground()
 {
 }
 
-void ParallaxBackground::Init(Vec2 initialPos, float currentTime, Size visibleSize, Node* gameNode, int maxDayTime, int cloudDensity, float maxMapWidth)
+void ParallaxBackground::Init(Vec2 initialPos, float currentTime, Size visibleSize, Node* gameNode, int maxDayTime, int cloudDensity, float maxMapWidth, int weatherType)
 {
 	m_maxDayTime = maxDayTime;
+	m_weatherType = weatherType;//Clamp(weatherType, 0, 1);
 	m_cloudDensity = Clamp(cloudDensity, 5, 0);
 	m_isParallaxBG = false;
 	m_visibleSizeX = visibleSize.width;
@@ -22,7 +25,11 @@ void ParallaxBackground::Init(Vec2 initialPos, float currentTime, Size visibleSi
 	m_initialPosition = initialPos;
 	m_backgroundNode = Node::create();
 	m_skyNode = Node::create();
+	m_frontNode = Node::create();
 	m_maxMapWidth = maxMapWidth;
+	m_cloudLevelMin = 0;
+	m_cloudLevelMax = 0;
+	m_sfxID = -1;
 
 	//Sky init ---------------------
 	m_skyGradient = LayerGradient::create(GetSkyColorTopByTime(currentTime), GetSkyColorBottomByTime(currentTime), Vec2(0, -1));
@@ -52,7 +59,30 @@ void ParallaxBackground::Init(Vec2 initialPos, float currentTime, Size visibleSi
 
 	m_nightShade = LayerColor::create(Color4B(0, 0, 25, GetShadeAlphaByTime(currentTime, false)));
 
+	CCLOG("weather type2: %i", m_weatherType);
+	//weather init
+	if (m_weatherType == 0)
+	{
+		m_weather = ParticleSystemQuad::create("img/effects/rainEffect/rain.plist");
+		m_weather->setPosition(visibleSize.width / 2, visibleSize.height / 2);
+		m_backgroundNode->addChild(m_weather);
+	}
+	else if (m_weatherType == 1)
+	{
+		m_weather = ParticleSystemQuad::create("img/effects/sandstormEffect/sandstorm.plist");
+		m_weather->setPosition(visibleSize.width / 2, visibleSize.height / 3.5f);
+		m_frontNode->addChild(m_weather);
+		
+	}
+	m_weather->setCascadeOpacityEnabled(true);
+	m_weather->setOpacity(0);
+	m_weather->setVisible(false);
+	
 	InitClouds();
+
+	//preload sound effects
+	auto audioEngine = CocosDenshion::SimpleAudioEngine::getInstance();
+	audioEngine->preloadEffect("sound/sfx/main/weather/rain.mp3");
 }
 
 void ParallaxBackground::AddParallaxLayer(string filePath, float scrollVel, Vec2 initialPos, float scale, int depthLevel)
@@ -89,9 +119,20 @@ void ParallaxBackground::UpdateBackground(Vec2 cameraPos, int timeOfDay)
 	UpdateClouds(timeOfDay, cameraPos);
 }
 
+void ParallaxBackground::SetCloudLevelRange(int min, int max)
+{
+	m_cloudLevelMin = Clamp(min, 5, 0);
+	m_cloudLevelMax = Clamp(max, 5, 0);
+}
+
 Node * ParallaxBackground::GetBackgroundNode()
 {
 	return m_backgroundNode;
+}
+
+cocos2d::Node * ParallaxBackground::GetFrontNode()
+{
+	return m_frontNode;
 }
 
 cocos2d::Node * ParallaxBackground::GetSkyNode()
@@ -168,6 +209,45 @@ void ParallaxBackground::ResetCloudParameters()
 	m_cloudNodeNear->setOpacity(0);
 	m_cloudNodeMiddle->setOpacity(0);
 	m_cloudNodeFar->setOpacity(0);
+
+	CCLOG("weather type3: %i", m_weatherType);
+
+	auto audioEngine = CocosDenshion::SimpleAudioEngine::getInstance();
+
+	if (m_sfxID != -1)
+	{
+		audioEngine->stopEffect(m_sfxID);
+	}
+
+	//Show or hide rain
+	if (m_weatherType == 0)
+	{
+		if (m_cloudDensity == 5)
+		{
+			m_weather->setVisible(true);
+			m_weather->runAction(FadeIn::create(3.0f));
+			
+			m_sfxID = audioEngine->playEffect("sound/sfx/main/weather/rain.mp3", true);
+		}
+		else
+		{
+			auto hide = Hide::create();
+			m_weather->runAction(Sequence::create(FadeOut::create(1.0f), hide, NULL));
+		}
+	}
+	else if (m_weatherType == 1)
+	{
+		if (m_cloudDensity == 0)
+		{
+			m_weather->setVisible(true);
+			m_weather->runAction(FadeIn::create(3.0f));
+		}
+		else
+		{
+			auto hide = Hide::create();
+			m_weather->runAction(Sequence::create(FadeOut::create(1.0f), hide, NULL));
+		}
+	}
 
 	//cloud number is the power of cloud density.
 	m_cloudNumber = 2 * m_cloudDensity * m_cloudDensity;
@@ -355,7 +435,8 @@ void ParallaxBackground::UpdateClouds(int timeOfDay, Vec2 cameraPos)
 
 		if (nearCloudMovingOffset >= 1040)
 		{
-			m_cloudDensity = RandomHelper::random_int(1, 5);
+			m_cloudDensity = RandomHelper::random_int(m_cloudLevelMin, m_cloudLevelMax);
+
 			ResetCloudParameters();
 
 			auto fadeInNear = FadeIn::create(1.0f);
@@ -407,6 +488,22 @@ void ParallaxBackground::UpdateParallaxBG(int timeOfDay, cocos2d::Vec2 cameraPos
 			blacknessLevel = Clamp(blacknessLevel, 255, 0);
 			m_backgroundVector[i]->setColor(Color3B(255 - blacknessLevel, 255 - blacknessLevel, 255 - blacknessLevel));
 		}
+
+		if (m_weatherType == 1)
+		{
+			if (m_cloudDensity == 0)
+			{
+				static int dmgCounter = 0;
+				dmgCounter++;
+				CCLOG("dmgCounter: %i", dmgCounter);
+				if (dmgCounter >= 60)
+				{
+					dmgCounter = 0;
+					auto dmg = DamageHandler::GetInstance();
+					dmg->DealDamageToPlayer(5);
+				}
+			}
+		}
 	}
 }
 
@@ -434,7 +531,6 @@ cocos2d::Color4B ParallaxBackground::GetSkyColorTopByTime(float timeOfDay)
 		nextIndex = 0;
 	}
 	Color4B nextColor = topColorList[nextIndex];
-	//CCLOG("previous Color Red: %i , next color red: %i", previousColor.r, nextColor.r);
 	//get value from 0 to step
 	float delta = abs(timeOfDay - (index * step));
 

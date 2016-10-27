@@ -30,7 +30,10 @@ public:
 	bool updateEnemies(cocos2d::Rect playerRect);
 	bool collideWith(cocos2d::Rect rect);
 	void receiveDamage(bool attackInstanced, Effect* effect);
-	
+	bool isDeadNextAttack();
+	std::string getActingEnemyName();
+	int getActingEnemyIndex();
+
 	cocos2d::Vec2 GetStaticEnemyPos(unsigned int index);
 
 private:
@@ -126,6 +129,7 @@ private:
 		int HP;
 		float originX;
 		float area; //Area of action (only for static)
+		int size;
 	};
 
 private:

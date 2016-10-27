@@ -64,12 +64,19 @@ void Enemy::SetStaticEnemy(std::string name, cocos2d::Vec2 position, float area)
 	auto sprite = Sprite::create(filepath);
 	sprite->setTag(type);
 	sprite->setScale(0.8);
-	sprite->setPosition(Vec2(position.x + 60, position.y + 60));
 	m_staticEnemyVector.push_back(sprite);
 
 	EnemyState state(50, area);
 	state.originX = position.x + 60;
 	state.damage = 40;
+	state.size = 128;
+	if (name == "spider")
+	{
+		state.size = 64;
+	}
+
+	sprite->setPosition(Vec2(position.x + 60, position.y + (state.size/2)));
+	
 	m_staticEnemyState.push_back(state);
 }
 
@@ -156,7 +163,7 @@ bool Enemy::updateEnemies(Rect playerRect)
 		}
 
 		//default rect
-		auto frameInSpritesheet = Rect(0, 0, 128, 128);
+		auto frameInSpritesheet = Rect(0, 0, m_staticEnemyState[i].size, m_staticEnemyState[i].size);
 		//frame steps
 		int framesForNextAnim = 20;
 		int nextAnimForAttack = 10;
@@ -174,7 +181,7 @@ bool Enemy::updateEnemies(Rect playerRect)
 				m_staticEnemyVector[i]->setColor(Color3B::WHITE);
 			}
 			
-			frameInSpritesheet = GetFrameSpriteRect(m_staticEnemyState[i].timeCounter, framesForNextAnim, 128, 0, 1);
+			frameInSpritesheet = GetFrameSpriteRect(m_staticEnemyState[i].timeCounter, framesForNextAnim, m_staticEnemyState[i].size, 0, 1);
 
 			if (m_staticEnemyState[i].timeCounter / 60 >= m_staticEnemyState[i].stateDuration)
 			{
@@ -210,7 +217,7 @@ bool Enemy::updateEnemies(Rect playerRect)
 				staticWalk(m_staticEnemyState[i].directionRight, m_staticEnemyVector[i], m_staticEnemyState[i].originX, m_staticEnemyState[i].area, 20);
 			}
 
-			frameInSpritesheet = GetFrameSpriteRect(m_staticEnemyState[i].timeCounter, framesForNextAnim, 128, 2, 4);
+			frameInSpritesheet = GetFrameSpriteRect(m_staticEnemyState[i].timeCounter, framesForNextAnim, m_staticEnemyState[i].size, 2, 4);
 			
 			if (m_staticEnemyState[i].timeCounter / 60 >= m_staticEnemyState[i].stateDuration)
 			{
@@ -220,7 +227,7 @@ bool Enemy::updateEnemies(Rect playerRect)
 			break;
 		case ENEMY_STATE_ATTACKING:
 
-			frameInSpritesheet = GetFrameSpriteRect(m_staticEnemyState[i].timeCounter, nextAnimForAttack, 128, 3, 4);
+			frameInSpritesheet = GetFrameSpriteRect(m_staticEnemyState[i].timeCounter, nextAnimForAttack, m_staticEnemyState[i].size, 3, 4);
 			
 			if ((m_staticEnemyState[i].timeCounter / 60.0f) >= m_staticEnemyState[i].stateDuration)
 			{
@@ -258,7 +265,7 @@ bool Enemy::updateEnemies(Rect playerRect)
 				staticWalk(m_staticEnemyState[i].directionRight, m_staticEnemyVector[i], m_staticEnemyState[i].originX, m_staticEnemyState[i].area, 40);
 			}
 
-			frameInSpritesheet = GetFrameSpriteRect(m_staticEnemyState[i].timeCounter, nextAnimForAttack, 128, 2, 4);
+			frameInSpritesheet = GetFrameSpriteRect(m_staticEnemyState[i].timeCounter, nextAnimForAttack, m_staticEnemyState[i].size, 2, 4);
 
 			if (m_staticEnemyState[i].timeCounter / 60 >= m_staticEnemyState[i].stateDuration)
 			{
@@ -276,7 +283,7 @@ bool Enemy::updateEnemies(Rect playerRect)
 				m_staticEnemyState[i].firstTimeState = false;
 				m_staticEnemyState[i].timeCounter = 0;
 			}
-			frameInSpritesheet = GetFrameSpriteRect(m_staticEnemyState[i].timeCounter, framesForNextAnim, 128, 0, 4);
+			frameInSpritesheet = GetFrameSpriteRect(m_staticEnemyState[i].timeCounter, framesForNextAnim, m_staticEnemyState[i].size, 0, 4);
 			if (m_staticEnemyState[i].timeCounter / 60 >= m_staticEnemyState[i].stateDuration)
 			{
 				m_staticEnemyState[i].firstTimeState = true;
@@ -292,7 +299,7 @@ bool Enemy::updateEnemies(Rect playerRect)
 				m_staticEnemyState[i].firstTimeState = false;
 				m_staticEnemyState[i].timeCounter = 0;
 			}
-			frameInSpritesheet = GetFrameSpriteRect(m_staticEnemyState[i].timeCounter, framesForNextAnim, 128, 1, 2);
+			frameInSpritesheet = GetFrameSpriteRect(m_staticEnemyState[i].timeCounter, framesForNextAnim, m_staticEnemyState[i].size, 1, 2);
 			if (m_staticEnemyState[i].timeCounter / 60 >= m_staticEnemyState[i].stateDuration)
 			{
 				m_staticEnemyState[i].firstTimeState = true;
@@ -307,7 +314,7 @@ bool Enemy::updateEnemies(Rect playerRect)
 				m_staticEnemyVector[i]->runAction(TintTo::create(m_staticEnemyState[i].stateDuration, Color3B(200, 200, 200)));
 			}
 
-			frameInSpritesheet = GetFrameSpriteRect(m_staticEnemyState[i].timeCounter, framesForNextAnim + 10, 128, 4, 4);
+			frameInSpritesheet = GetFrameSpriteRect(m_staticEnemyState[i].timeCounter, framesForNextAnim + 10, m_staticEnemyState[i].size, 4, 4);
 
 			if ((m_staticEnemyState[i].timeCounter / 60) >= m_staticEnemyState[i].stateDuration)
 			{
@@ -369,6 +376,33 @@ void Enemy::receiveDamage(bool attackInstanced, Effect* effect)
 		}
 	}
 	
+}
+
+bool Enemy::isDeadNextAttack()
+{
+	if (m_collidedMonsterIndex != -1)
+	{
+		if (m_staticEnemyState[m_collidedMonsterIndex].HP <= 10 && m_staticEnemyState[m_collidedMonsterIndex].HP > 0)
+		{
+			return true;
+		}
+	}
+	
+
+	return false;
+}
+
+std::string Enemy::getActingEnemyName()
+{
+	auto enemyType = m_staticEnemyVector[m_collidedMonsterIndex]->getTag();
+
+	return m_name[enemyType];
+}
+
+int Enemy::getActingEnemyIndex()
+{
+
+	return m_collidedMonsterIndex;
 }
 
 Vec2 Enemy::GetStaticEnemyPos(unsigned int index)
